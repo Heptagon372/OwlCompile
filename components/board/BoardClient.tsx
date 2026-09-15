@@ -13,7 +13,7 @@ import type { Block } from '@/lib/engine/types';
 import { useGame } from '@/lib/client/useGame';
 import { formatClock, remainingSeconds, useNow } from '@/lib/client/time';
 import { MapGrid } from '@/components/map/MapGrid';
-import { OwlLogo } from '@/components/map/OwlSprite';
+import { BrandMark } from '@/components/ui/Brand';
 import { GlowArc } from '@/components/ui/GlowArc';
 import { RingProgress } from '@/components/ui/RingProgress';
 import { AvatarStack } from '@/components/ui/Avatar';
@@ -78,7 +78,7 @@ export function BoardClient({ code }: { code: string }) {
   if (error && !view) {
     return (
       <Stage>
-        <BoardNotice icon={<OwlLogo size={120} />} title={error.status === 403 ? '진행자만 볼 수 있는 화면입니다' : error.status === 404 ? '게임을 찾을 수 없습니다' : '보드를 불러오지 못했습니다'}>
+        <BoardNotice icon={<BrandMark size={160} />} title={error.status === 403 ? '진행자만 볼 수 있는 화면입니다' : error.status === 404 ? '게임을 찾을 수 없습니다' : '보드를 불러오지 못했습니다'}>
           {error.message}
         </BoardNotice>
       </Stage>
@@ -87,7 +87,7 @@ export function BoardClient({ code }: { code: string }) {
   if (!view) {
     return (
       <Stage>
-        <BoardNotice icon={<OwlLogo size={120} />} title="불러오는 중…">
+        <BoardNotice icon={<BrandMark size={160} />} title="불러오는 중…">
           게임 <span className="font-mono font-semibold tabular-nums text-text">{code}</span>
         </BoardNotice>
       </Stage>
@@ -96,7 +96,7 @@ export function BoardClient({ code }: { code: string }) {
   if (!view.me.isHost) {
     return (
       <Stage>
-        <BoardNotice icon={<OwlLogo size={120} />} title="진행자만 볼 수 있는 화면입니다">이 게임의 진행자 계정으로 열어 주세요.</BoardNotice>
+        <BoardNotice icon={<BrandMark size={160} />} title="진행자만 볼 수 있는 화면입니다">이 게임의 진행자 계정으로 열어 주세요.</BoardNotice>
       </Stage>
     );
   }
@@ -156,7 +156,7 @@ export function BoardFrame({ view, live, children }: { view: GameView; live: boo
       {/* 1920 무대라 반지름을 px 로 준다 (기본값은 창 폭 vw 기준이라 축소된 무대와 맞지 않는다). 숨쉬기는 움직임 줄이기면 멈춤 */}
       {lobby ? <GlowArc intensity="strong" radius="1150px" offset={170} animated /> : null}
       <header className="glass relative flex h-[76px] shrink-0 items-center gap-5 rounded-full border border-stroke pl-5 pr-3 shadow-glass">
-        <OwlLogo size={44} />
+        <BrandMark size={56} />
         <BoardWordmark />
         <span className="h-9 w-px shrink-0 bg-stroke-strong" aria-hidden="true" />
         {game.phase === 'finished' ? (

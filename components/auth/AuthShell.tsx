@@ -3,8 +3,7 @@
 // (20px, stroke-strong, 왼쪽 위 보라 아이콘 배지 + 제목). 입력은 12px 유리 입력, 버튼은 알약 (components/ui).
 // 빛: 강한 빛은 카드 안의 주 버튼 하나. 배지는 빛 없이 그라데이션만. 훅 없음 — 서버 페이지에서 그대로 쓴다.
 import type { ReactNode } from 'react';
-import { OwlLogo } from '@/components/map/OwlSprite';
-import { Wordmark } from '@/components/ui/Brand';
+import { BrandMark, Wordmark } from '@/components/ui/Brand';
 import { GlowArc } from '@/components/ui/GlowArc';
 import { IconBadge } from '@/components/ui/IconBadge';
 import { Panel } from '@/components/ui/Panel';
@@ -43,7 +42,7 @@ export function AuthShell({
         <div className="mb-7 flex flex-col items-center text-center">
           <p className="flex items-center gap-2.5">
             {/* 빛 색 = --glow-badge (나이트 rgba(124,77,255,.5) 그대로, 라이트는 옅은 보라 그림자) */}
-            <OwlLogo size={34} className="drop-shadow-[0_0_12px_var(--glow-badge)]" />
+            <BrandMark size={48} className="drop-shadow-[0_0_12px_var(--glow-badge)]" />
             <Wordmark className="text-[28px] md:text-[32px]" />
           </p>
           <p className="mt-3 text-[15px] font-medium leading-snug text-text-dim">{intro}</p>

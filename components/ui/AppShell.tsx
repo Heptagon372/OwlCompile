@@ -8,10 +8,9 @@
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 import { ACCOUNT_ROLE_LABEL, type AccountRole } from '@/lib/contracts';
-import { OwlLogo } from '@/components/map/OwlSprite';
 import { Avatar } from './Avatar';
 import { ThemeToggle } from './ThemeToggle';
-import { Wordmark } from './Brand';
+import { BrandMark, Wordmark } from './Brand';
 import { IconLogout } from './icons';
 import { MobileNav, RailNav, type NavItem } from './ShellNav';
 
@@ -98,7 +97,7 @@ export function ShellRail({ items, user }: { items: NavItem[]; user?: ShellUser 
         aria-label="OWL COMPILE 홈"
         className="flex h-16 shrink-0 items-center justify-center gap-2.5 rounded-t-card text-text transition-colors duration-150 hover:bg-tint/[0.04] focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-violet-ink xl:justify-start xl:px-5"
       >
-        <OwlLogo size={30} className="drop-shadow-[0_0_10px_var(--glow-accent)]" />
+        <BrandMark size={36} className="drop-shadow-[0_0_10px_var(--glow-accent)]" />
         <Wordmark className="hidden text-[16px] xl:inline" />
       </Link>
       <div className="flex-1 overflow-y-auto px-2 py-2 xl:px-3">
@@ -162,7 +161,7 @@ export function ShellHeader({
             : 'min-h-11 min-w-11 justify-center sm:min-w-0 sm:justify-start')
         }
       >
-        <OwlLogo size={24} />
+        <BrandMark size={30} />
         <Wordmark className={`text-[15px] ${wordVis}`} />
       </Link>
       {title ? <span aria-hidden="true" className={`h-5 w-px shrink-0 bg-stroke-strong ${dividerVis}`} /> : null}
