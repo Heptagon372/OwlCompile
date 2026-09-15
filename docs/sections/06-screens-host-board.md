@@ -135,7 +135,7 @@ export function usePlayback(input: {
 
 ### 6.10 스프라이트와 타일 렌더 규칙
 
-- `OwlSprite`: `cards.html` 히어로 SVG(viewBox 64, 머리 `#7A4DFF`, 눈 `#F6F2FF`/`#14102A`, 부리 `#FFB020`)를 셀 안에 84px로 놓고 머리 위에 18px 삼각 화살표(`--moon`)를 붙인 그룹 전체를 회전한다(브리프 §5). 폰 미니맵(섹션 05)은 같은 컴포넌트에 `cell` prop만 다르게 준다.
+- `OwlSprite`: 캐릭터 그림 `public/game/owl.png`(보라 부엉이, 투명 배경)를 셀 안에 놓고 머리 위에 작은 시안 삼각 화살표를 붙인 그룹 전체를 회전한다(브리프 §5). 폰 미니맵(섹션 05)은 같은 컴포넌트를 쓴다.
 - `CatSprite`: 🐱 64px, 전환 규칙은 부엉이와 같다.
 - `MapGrid`는 타일 층(CSS grid)과 스프라이트 층(absolute)을 분리해 transform 전환이 레이아웃을 건드리지 않게 한다. 좌표 `tiles[y][x]`.
 

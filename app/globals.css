@@ -250,7 +250,6 @@
   --map-patrol: var(--color-danger);
   --map-glyph-filter: drop-shadow(0 0 0.7cqi color-mix(in srgb, currentColor 70%, transparent));
   --map-actor-filter: drop-shadow(0 0.6cqi 1.2cqi rgba(124, 77, 255, 0.55));
-  --map-owl-pupil: var(--color-bg);
 
   /* 코드 뷰 (.cv* .tk-* .ntk*) */
   --code-keyword: var(--color-neon-violet);
@@ -496,7 +495,6 @@
   --map-patrol: #D63A5E;
   --map-glyph-filter: drop-shadow(0 0.25cqi 0.4cqi rgba(60, 40, 140, 0.18));
   --map-actor-filter: drop-shadow(0 0.5cqi 0.9cqi rgba(60, 40, 140, 0.3));
-  --map-owl-pupil: #1A1430;
 
   /* 코드 뷰: 네온 대신 형광펜 */
   --code-keyword: #6A3DF0;

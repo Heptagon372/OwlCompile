@@ -248,7 +248,7 @@ interface GameView {
 | `lib/server/session.ts` | `createSession(userId, req)` `getCurrentUser` `requireUser(roles?)` `requirePageUser(roles?, {next, allowMustChange})` `destroySession` `destroyUserSessions` `userFromToken` `toPublicUser` |
 | `lib/server/realtime.ts` | `subscribe` `publish(gameId, event, {teamId?, hostsOnly?})` `onlineUserIds` `setSubscriberTeam` `publishDeleted` `onPresenceChange(name, fn)` `startTicker(name, fn, ms)` `sseResponse(req, sub, hello)` |
 | `lib/client/api.ts` · `useGame.ts` · `time.ts` | `api<T>()` `ApiClientError` · `useGame(code)` → `{view, error, status, serverOffsetMs, serverNow, refresh, patchView}` · `useNow` `remainingSeconds` `formatClock` |
-| `components/map/*` | `MapGrid` `MapActor` `CatSprite` `OwlSprite` `OwlLogo` `DIR_DEG` `nextRotation` |
+| `components/map/*` | `MapGrid` `MapActor` `CatSprite` `OwlSprite` `DIR_DEG` `nextRotation` |
 | `components/ui/*` | `Button` `buttonClass` `ToastProvider` `useToast` `Sheet` `ConfirmSheet` `TopBar` |
 | `app/globals.css` | 토큰(`bg-night` `bg-night-2` `text-moon` `text-moon-dim` `border-line` `bg-owl` …), 카드 클래스(`.blk` `.cblk` `.mouth` `.else` `.foot` `.stack` 분류색, 폰 크기 `.blk-compact`, 면 색 `--notch-bg`), 맵 클래스(`.map` `.map-cell` `.map-actor`) |
 
