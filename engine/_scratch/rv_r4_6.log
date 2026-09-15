@@ -1,0 +1,27 @@
+size 1: 4 programs, goal 0 (t=0ms)
+size 2: 59 programs, goal 0 (t=1ms)
+size 3: 1128 programs, goal 0 (t=8ms)
+size 4: 24074 programs, goal 0 (t=49ms)
+size 5: 550873 programs, goal 0 (t=460ms)
+size 6: 13224038 programs, goal 50 (t=11240ms)
+score 160 size 6 mice 2 ticks 9: f rep2{J R f J}
+score 160 size 6 mice 2 ticks 9: f rep3{J R f J}
+score 160 size 6 mice 2 ticks 9: f rep4{J R f J}
+score 160 size 6 mice 2 ticks 9: f rep5{J R f J}
+score 160 size 6 mice 2 ticks 9: f rep6{J R f J}
+score 160 size 6 mice 2 ticks 9: f rep7{J R f J}
+score 160 size 6 mice 2 ticks 9: f rep8{J R f J}
+score 160 size 6 mice 2 ticks 9: f rep9{J R f J}
+score 160 size 6 mice 2 ticks 9: rep3{f J ip{|J} R}
+score 160 size 6 mice 2 ticks 9: rep4{f J ip{|J} R}
+score 160 size 6 mice 2 ticks 9: rep5{f J ip{|J} R}
+score 160 size 6 mice 2 ticks 9: rep6{f J ip{|J} R}
+score 160 size 6 mice 2 ticks 9: rep7{f J ip{|J} R}
+score 160 size 6 mice 2 ticks 9: rep8{f J ip{|J} R}
+score 160 size 6 mice 2 ticks 9: rep9{f J ip{|J} R}
+score 140 size 6 mice 1 ticks 11: rep6{ip{|f} J iw{R|}}
+score 140 size 6 mice 1 ticks 11: rep7{ip{|f} J iw{R|}}
+score 140 size 6 mice 1 ticks 11: rep8{ip{|f} J iw{R|}}
+score 140 size 6 mice 1 ticks 11: rep9{ip{|f} J iw{R|}}
+score 140 size 6 mice 1 ticks 11: rep6{iw{R|} ip{|f} J}
+distribution: size6 score160 mice2:15 | size6 score140 mice1:35

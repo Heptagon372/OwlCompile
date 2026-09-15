@@ -1,0 +1,21 @@
+TILES OVERRIDE: ######## | #S.OKO.# | #.#...O# | #...O#.# | #.#.M..# | ######O# | #GODMO.# | ########
+size 1: 4 programs, goal 0 (t=0ms)
+size 2: 59 programs, goal 0 (t=1ms)
+size 3: 1128 programs, goal 0 (t=6ms)
+size 4: 24074 programs, goal 0 (t=37ms)
+size 5: 550873 programs, goal 0 (t=371ms)
+size 6: 13224038 programs, goal 35 (t=11242ms)
+size 7: 328655024 programs, goal 3077 (t=365446ms)
+score 140 size 6 mice 1 ticks 11: rep6{ip{|f} J iw{R|}}
+score 140 size 6 mice 1 ticks 11: rep7{ip{|f} J iw{R|}}
+score 140 size 6 mice 1 ticks 11: rep8{ip{|f} J iw{R|}}
+score 140 size 6 mice 1 ticks 11: rep9{ip{|f} J iw{R|}}
+score 140 size 6 mice 1 ticks 11: rep6{iw{R|} ip{|f} J}
+score 140 size 6 mice 1 ticks 11: rep7{iw{R|} ip{|f} J}
+score 140 size 6 mice 1 ticks 11: rep8{iw{R|} ip{|f} J}
+score 140 size 6 mice 1 ticks 11: rep9{iw{R|} ip{|f} J}
+score 140 size 6 mice 1 ticks 11: rep9{iw{R|} ip{J|f}}
+score 140 size 6 mice 1 ticks 11: rep9{ip{J|f} iw{R|}}
+score 140 size 6 mice 1 ticks 11: rep3{rep2{ip{|f} J} R}
+score 140 size 6 mice 1 ticks 11: rep4{rep2{ip{|f} J} R}
+distribution: size6 score140 mice1:35 | size7 score135 mice1:3077

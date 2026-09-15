@@ -1,0 +1,32 @@
+size 7: 324489120 programs, goal 79 (t=324177ms)
+score 165 size 7 mice 2 ticks 13: rep5{f ip{J L|} ip{J|}}
+score 165 size 7 mice 2 ticks 13: rep6{f ip{J L|} ip{J|}}
+score 165 size 7 mice 2 ticks 13: rep7{f ip{J L|} ip{J|}}
+score 165 size 7 mice 2 ticks 13: rep8{f ip{J L|} ip{J|}}
+score 165 size 7 mice 2 ticks 13: rep9{f ip{J L|} ip{J|}}
+score 165 size 7 mice 2 ticks 13: rep5{f ip{J L ip{J|}|}}
+score 165 size 7 mice 2 ticks 13: rep6{f ip{J L ip{J|}|}}
+score 165 size 7 mice 2 ticks 13: rep7{f ip{J L ip{J|}|}}
+score 165 size 7 mice 2 ticks 13: rep8{f ip{J L ip{J|}|}}
+score 165 size 7 mice 2 ticks 13: rep9{f ip{J L ip{J|}|}}
+score 165 size 7 mice 2 ticks 13: rep5{ip{J|} f ip{J L|}}
+score 165 size 7 mice 2 ticks 13: rep6{ip{J|} f ip{J L|}}
+score 165 size 7 mice 2 ticks 13: rep7{ip{J|} f ip{J L|}}
+score 165 size 7 mice 2 ticks 13: rep8{ip{J|} f ip{J L|}}
+score 165 size 7 mice 2 ticks 13: rep9{ip{J|} f ip{J L|}}
+score 165 size 7 mice 2 ticks 13: rep6{ip{J|f} ip{J L|}}
+score 165 size 7 mice 2 ticks 13: rep7{ip{J|f} ip{J L|}}
+score 165 size 7 mice 2 ticks 13: rep8{ip{J|f} ip{J L|}}
+score 165 size 7 mice 2 ticks 13: rep9{ip{J|f} ip{J L|}}
+score 165 size 7 mice 2 ticks 13: rep6{ip{J L|} ip{J|} f}
+score 165 size 7 mice 2 ticks 13: rep7{ip{J L|} ip{J|} f}
+score 165 size 7 mice 2 ticks 13: rep8{ip{J L|} ip{J|} f}
+score 165 size 7 mice 2 ticks 13: rep9{ip{J L|} ip{J|} f}
+score 165 size 7 mice 2 ticks 13: rep7{ip{J L|} ip{J|f}}
+score 165 size 7 mice 2 ticks 13: rep8{ip{J L|} ip{J|f}}
+score 165 size 7 mice 2 ticks 13: rep9{ip{J L|} ip{J|f}}
+score 165 size 7 mice 2 ticks 13: rep2{rep3{f ip{J L|}} J}
+score 165 size 7 mice 2 ticks 13: rep3{rep3{f ip{J L|}} J}
+score 165 size 7 mice 2 ticks 13: rep4{rep3{f ip{J L|}} J}
+score 165 size 7 mice 2 ticks 13: rep5{rep3{f ip{J L|}} J}
+distribution: size7 score165 mice2:79

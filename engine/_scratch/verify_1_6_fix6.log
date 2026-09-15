@@ -1,0 +1,51 @@
+=== direct runs on FIXED R4 map ===
+solutions[0] (expect {"outcome":"goal","ticks":11,"mice":1,"blocks":6,"score":140}): valid=true goal ticks=11 mice=1 blocks=6 score=140
+   반복 3 { 반복 3 { 만약 앞이 구덩이면 { 점프 } 아니면 { 앞으로 } } 우회전 }
+   path: 2,1 4,1!key 6,1 6,1 6,3 6,4 6,6 6,6 4,6!mouse 3,6!door 1,6!goal
+solutions[1] (expect {"outcome":"goal","ticks":11,"mice":1,"blocks":7,"score":135}): valid=true goal ticks=11 mice=1 blocks=7 score=135
+   반복 4 { 반복 3 { 만약 앞이 벽이면 { 우회전 } 아니면 { 만약 앞이 구덩이면 { 점프 } 아니면 { 앞으로 } } } }
+   path: 2,1 4,1!key 6,1 6,1 6,3 6,4 6,6 6,6 4,6!mouse 3,6!door 1,6!goal
+solutions[2] (expect {"outcome":"goal","ticks":10,"mice":2,"blocks":10,"score":140}): valid=true error ticks=6 mice=1 blocks=10 score=35
+   앞으로 점프 우회전 반복 4 { 만약 앞이 구덩이면 { 점프 } 아니면 { 앞으로 } } 우회전 앞으로 점프
+   path: 2,1 4,1!key 4,1 4,2 4,4!mouse 4,4!wall
+courtyard 6 no-if: valid=true error ticks=6 mice=1 blocks=6 score=35
+   앞으로 반복 2 { 점프 우회전 앞으로 점프 }
+   path: 2,1 4,1!key 4,1 4,2 4,4!mouse 4,4!wall
+courtyard hand 9 flat: valid=true error ticks=6 mice=1 blocks=9 score=35
+   앞으로 점프 우회전 앞으로 점프 점프 우회전 앞으로 점프
+   path: 2,1 4,1!key 4,1 4,2 4,4!mouse 4,4!wall
+naive: valid=false goal ticks=11 mice=1 blocks=11 score=120
+   앞으로 점프 점프 우회전 점프 앞으로 점프 우회전 점프 앞으로 점프
+   path: 2,1 4,1!key 6,1 6,1 6,3 6,4 6,6 6,6 4,6!mouse 3,6!door 1,6!goal
+size 1: 4 programs, goal 0
+size 2: 64 programs, goal 0
+size 3: 1252 programs, goal 0
+size 4: 27412 programs, goal 0
+size 5: 644268 programs, goal 0
+size 6: 15889988 programs, goal 35
+best score <= 6 blocks: 140; two-mouse goal programs: 0; hits at best: 35
+  score 140 size 6 mice 1 ticks 11 ifpit=true: 반복 6 { 만약 앞이 구덩이면 { } 아니면 { 앞으로 } 점프 만약 앞이 벽이면 { 우회전 } 아니면 { } }
+  score 140 size 6 mice 1 ticks 11 ifpit=true: 반복 7 { 만약 앞이 구덩이면 { } 아니면 { 앞으로 } 점프 만약 앞이 벽이면 { 우회전 } 아니면 { } }
+  score 140 size 6 mice 1 ticks 11 ifpit=true: 반복 8 { 만약 앞이 구덩이면 { } 아니면 { 앞으로 } 점프 만약 앞이 벽이면 { 우회전 } 아니면 { } }
+  score 140 size 6 mice 1 ticks 11 ifpit=true: 반복 9 { 만약 앞이 구덩이면 { } 아니면 { 앞으로 } 점프 만약 앞이 벽이면 { 우회전 } 아니면 { } }
+  score 140 size 6 mice 1 ticks 11 ifpit=true: 반복 6 { 만약 앞이 벽이면 { 우회전 } 아니면 { } 만약 앞이 구덩이면 { } 아니면 { 앞으로 } 점프 }
+  score 140 size 6 mice 1 ticks 11 ifpit=true: 반복 7 { 만약 앞이 벽이면 { 우회전 } 아니면 { } 만약 앞이 구덩이면 { } 아니면 { 앞으로 } 점프 }
+  score 140 size 6 mice 1 ticks 11 ifpit=true: 반복 8 { 만약 앞이 벽이면 { 우회전 } 아니면 { } 만약 앞이 구덩이면 { } 아니면 { 앞으로 } 점프 }
+  score 140 size 6 mice 1 ticks 11 ifpit=true: 반복 9 { 만약 앞이 벽이면 { 우회전 } 아니면 { } 만약 앞이 구덩이면 { } 아니면 { 앞으로 } 점프 }
+  score 140 size 6 mice 1 ticks 11 ifpit=true: 반복 9 { 만약 앞이 벽이면 { 우회전 } 아니면 { } 만약 앞이 구덩이면 { 점프 } 아니면 { 앞으로 } }
+  score 140 size 6 mice 1 ticks 11 ifpit=true: 반복 9 { 만약 앞이 구덩이면 { 점프 } 아니면 { 앞으로 } 만약 앞이 벽이면 { 우회전 } 아니면 { } }
+  score 140 size 6 mice 1 ticks 11 ifpit=true: 반복 3 { 반복 2 { 만약 앞이 구덩이면 { } 아니면 { 앞으로 } 점프 } 우회전 }
+  score 140 size 6 mice 1 ticks 11 ifpit=true: 반복 4 { 반복 2 { 만약 앞이 구덩이면 { } 아니면 { 앞으로 } 점프 } 우회전 }
+  score 140 size 6 mice 1 ticks 11 ifpit=true: 반복 5 { 반복 2 { 만약 앞이 구덩이면 { } 아니면 { 앞으로 } 점프 } 우회전 }
+  score 140 size 6 mice 1 ticks 11 ifpit=true: 반복 6 { 반복 2 { 만약 앞이 구덩이면 { } 아니면 { 앞으로 } 점프 } 우회전 }
+  score 140 size 6 mice 1 ticks 11 ifpit=true: 반복 7 { 반복 2 { 만약 앞이 구덩이면 { } 아니면 { 앞으로 } 점프 } 우회전 }
+  score 140 size 6 mice 1 ticks 11 ifpit=true: 반복 8 { 반복 2 { 만약 앞이 구덩이면 { } 아니면 { 앞으로 } 점프 } 우회전 }
+  score 140 size 6 mice 1 ticks 11 ifpit=true: 반복 9 { 반복 2 { 만약 앞이 구덩이면 { } 아니면 { 앞으로 } 점프 } 우회전 }
+  score 140 size 6 mice 1 ticks 11 ifpit=true: 반복 3 { 반복 3 { 만약 앞이 구덩이면 { 점프 } 아니면 { 앞으로 } } 우회전 }
+  score 140 size 6 mice 1 ticks 11 ifpit=true: 반복 4 { 반복 3 { 만약 앞이 구덩이면 { 점프 } 아니면 { 앞으로 } } 우회전 }
+  score 140 size 6 mice 1 ticks 11 ifpit=true: 반복 5 { 반복 3 { 만약 앞이 구덩이면 { 점프 } 아니면 { 앞으로 } } 우회전 }
+  score 140 size 6 mice 1 ticks 11 ifpit=true: 반복 6 { 반복 3 { 만약 앞이 구덩이면 { 점프 } 아니면 { 앞으로 } } 우회전 }
+  score 140 size 6 mice 1 ticks 11 ifpit=true: 반복 7 { 반복 3 { 만약 앞이 구덩이면 { 점프 } 아니면 { 앞으로 } } 우회전 }
+  score 140 size 6 mice 1 ticks 11 ifpit=true: 반복 8 { 반복 3 { 만약 앞이 구덩이면 { 점프 } 아니면 { 앞으로 } } 우회전 }
+  score 140 size 6 mice 1 ticks 11 ifpit=true: 반복 9 { 반복 3 { 만약 앞이 구덩이면 { 점프 } 아니면 { 앞으로 } } 우회전 }
+  score 140 size 6 mice 1 ticks 11 ifpit=true: 반복 6 { 만약 앞이 구덩이면 { } 아니면 { 만약 앞이 벽이면 { 우회전 } 아니면 { 앞으로 } } 점프 }

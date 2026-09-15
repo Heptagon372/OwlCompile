@@ -1,0 +1,25 @@
+size 1: 4 programs, goal 0 (t=0ms)
+size 2: 46 programs, goal 0 (t=1ms)
+size 3: 676 programs, goal 0 (t=4ms)
+size 4: 11034 programs, goal 0 (t=27ms)
+size 5: 192442 programs, goal 0 (t=187ms)
+size 6: 3513778 programs, goal 0 (t=3487ms)
+size 7: 66329646 programs, goal 0 (t=71486ms)
+size 8: 1284240346 programs, goal 0 (t=1410730ms)
+size 9: 25366343566 programs, goal 16 (t=84638798ms)
+score 135 size 9 mice 1 ticks 12: f rep2{J L J} rep2{f J L}
+score 135 size 9 mice 1 ticks 12: f rep2{J L J} rep3{f J L}
+score 135 size 9 mice 1 ticks 12: f rep2{J L J} rep4{f J L}
+score 135 size 9 mice 1 ticks 12: f rep2{J L J} rep5{f J L}
+score 135 size 9 mice 1 ticks 12: f rep2{J L J} rep6{f J L}
+score 135 size 9 mice 1 ticks 12: f rep2{J L J} rep7{f J L}
+score 135 size 9 mice 1 ticks 12: f rep2{J L J} rep8{f J L}
+score 135 size 9 mice 1 ticks 12: f rep2{J L J} rep9{f J L}
+score 135 size 9 mice 1 ticks 12: rep2{f rep2{J L J} f J L}
+score 135 size 9 mice 1 ticks 12: rep3{f rep2{J L J} f J L}
+score 135 size 9 mice 1 ticks 12: rep4{f rep2{J L J} f J L}
+score 135 size 9 mice 1 ticks 12: rep5{f rep2{J L J} f J L}
+score 135 size 9 mice 1 ticks 12: rep6{f rep2{J L J} f J L}
+score 135 size 9 mice 1 ticks 12: rep7{f rep2{J L J} f J L}
+score 135 size 9 mice 1 ticks 12: rep8{f rep2{J L J} f J L}
+distribution: size9 score135 mice1:16

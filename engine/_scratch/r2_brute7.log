@@ -1,0 +1,48 @@
+self-test: rep 1,3,13 (expect 1,3,13) | skip 1,1,12 (expect 1,2 or 1,1 bitmask,12) | naive-rep 2,5 (expect 2,5)
+size 1: 4 programs, goal-reaching so far 0
+size 2: 59 programs, goal-reaching so far 0
+size 3: 1130 programs, goal-reaching so far 0
+size 4: 24108 programs, goal-reaching so far 0
+size 5: 551725 programs, goal-reaching so far 0
+size 6: 13246444 programs, goal-reaching so far 0
+size 7: 329266506 programs, goal-reaching so far 79
+n=7 mice=3 rep5{f ip{J L|} ip{J|}}
+n=7 mice=3 rep6{f ip{J L|} ip{J|}}
+n=7 mice=3 rep7{f ip{J L|} ip{J|}}
+n=7 mice=3 rep8{f ip{J L|} ip{J|}}
+n=7 mice=3 rep9{f ip{J L|} ip{J|}}
+n=7 mice=3 rep5{f ip{J L ip{J|}|}}
+n=7 mice=3 rep6{f ip{J L ip{J|}|}}
+n=7 mice=3 rep7{f ip{J L ip{J|}|}}
+n=7 mice=3 rep8{f ip{J L ip{J|}|}}
+n=7 mice=3 rep9{f ip{J L ip{J|}|}}
+n=7 mice=3 rep5{f ip{rep5{L ip{J|}}|}}
+n=7 mice=3 rep6{f ip{rep5{L ip{J|}}|}}
+n=7 mice=3 rep7{f ip{rep5{L ip{J|}}|}}
+n=7 mice=3 rep8{f ip{rep5{L ip{J|}}|}}
+n=7 mice=3 rep9{f ip{rep5{L ip{J|}}|}}
+n=7 mice=3 rep5{f ip{rep9{L ip{J|}}|}}
+n=7 mice=3 rep6{f ip{rep9{L ip{J|}}|}}
+n=7 mice=3 rep7{f ip{rep9{L ip{J|}}|}}
+n=7 mice=3 rep8{f ip{rep9{L ip{J|}}|}}
+n=7 mice=3 rep9{f ip{rep9{L ip{J|}}|}}
+n=7 mice=3 rep5{ip{J|} f ip{J L|}}
+n=7 mice=3 rep6{ip{J|} f ip{J L|}}
+n=7 mice=3 rep7{ip{J|} f ip{J L|}}
+n=7 mice=3 rep8{ip{J|} f ip{J L|}}
+n=7 mice=3 rep9{ip{J|} f ip{J L|}}
+n=7 mice=3 rep6{ip{J|f} ip{J L|}}
+n=7 mice=3 rep7{ip{J|f} ip{J L|}}
+n=7 mice=3 rep8{ip{J|f} ip{J L|}}
+n=7 mice=3 rep9{ip{J|f} ip{J L|}}
+n=7 mice=3 rep6{ip{J L|} ip{J|} f}
+n=7 mice=3 rep7{ip{J L|} ip{J|} f}
+n=7 mice=3 rep8{ip{J L|} ip{J|} f}
+n=7 mice=3 rep9{ip{J L|} ip{J|} f}
+n=7 mice=3 rep7{ip{J L|} ip{J|f}}
+n=7 mice=3 rep8{ip{J L|} ip{J|f}}
+n=7 mice=3 rep9{ip{J L|} ip{J|f}}
+n=7 mice=3 rep2{rep3{f ip{J L|}} J}
+n=7 mice=3 rep3{rep3{f ip{J L|}} J}
+n=7 mice=3 rep4{rep3{f ip{J L|}} J}
+n=7 mice=3 rep5{rep3{f ip{J L|}} J}

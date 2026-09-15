@@ -1,0 +1,8 @@
+F3: X 118, routes 288, candidates 94398, shard 0/1
+progress 200 stageA 0 t=36082ms
+progress 400 stageA 0 t=45465ms
+progress 600 stageA 0 t=104709ms
+progress 800 stageA 0 t=273005ms
+progress 1000 stageA 0 t=371116ms
+progress 1200 stageA 0 t=1015571ms
+progress 1400 stageA 0 t=1181735ms

@@ -1,0 +1,9 @@
+stored size 1: blocks 4 lists 4 t=7ms
+stored size 2: blocks 13 lists 23 t=10ms
+stored size 3: blocks 63 lists 150 t=14ms
+stored size 4: blocks 465 lists 1137 t=42ms
+stored size 5: blocks 3474 lists 8962 t=236ms
+stored size 6: blocks 25126 lists 69131 t=1489ms
+stored size 7: blocks 183160 lists 522448 t=12579ms
+concrete size-8 bodies: 10790517 t=36455ms
+FOUND (<= 9): value 4094 (goal, mice mask 3) t=36455ms

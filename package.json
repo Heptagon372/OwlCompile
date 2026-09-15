@@ -1,0 +1,43 @@
+{
+  "name": "owl-compile",
+  "version": "0.1.0",
+  "private": true,
+  "description": "OWL COMPILE — S.OWL 오리엔테이션 팀 코딩 게임 (엔진 + 웹사이트)",
+  "scripts": {
+    "dev": "next dev -p 3000",
+    "build": "next build",
+    "start": "next start",
+    "predev": "npm run sync:engine",
+    "prebuild": "npm run sync:engine",
+    "pretest": "npm run sync:engine",
+    "test": "vitest run",
+    "verify": "tsx engine/verify.ts",
+    "verify:lib": "tsx lib/engine/verify.ts",
+    "sync:engine": "node scripts/sync-engine.mjs",
+    "e2e:api": "tsx scripts/e2e-api.ts",
+    "admin:create": "tsx scripts/create-admin.ts",
+    "build:doc": "tsx scripts/build-design-doc.ts"
+  },
+  "dependencies": {
+    "@dnd-kit/core": "^6.3.1",
+    "@dnd-kit/utilities": "^3.2.2",
+    "better-sqlite3": "^13.0.3",
+    "next": "^15.5.25",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "zod": "^4.6.2"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.3.3",
+    "@types/better-sqlite3": "^9.6.0",
+    "@types/node": "^22.15.0",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "marked": "^14.1.4",
+    "postcss": "^8.5.28",
+    "tailwindcss": "^4.3.3",
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0",
+    "vitest": "^5.0.0"
+  }
+}

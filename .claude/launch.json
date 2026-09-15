@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "design-preview",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["C:/Users/dogco/AppData/Local/Temp/claude/C--Users-dogco-OneDrive-------OwlCompile/f1570d01-baa0-47e3-8dfc-bde5d810d9ab/scratchpad/serve.mjs"],
+      "port": 4173
+    }
+  ]
+}
