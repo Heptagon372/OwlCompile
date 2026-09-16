@@ -194,9 +194,17 @@ main() {
   fi
   as_app git -C "$APP_DIR" log --oneline -1
 
-  step "설치와 빌드 (몇 분 걸립니다)"
-  systemctl stop owl-compile 2>/dev/null || true
-  as_app bash -c "cd '$APP_DIR' && npm ci --no-audit --no-fund && npm run build"
+  # 마지막으로 빌드한 커밋 이후 앱 코드(deploy/·docs/ 밖)가 안 바뀌었으면 빌드를 건너뛴다
+  local head built_marker="$APP_DIR/.next/owl-commit" built=""
+  head=$(as_app git -C "$APP_DIR" rev-parse HEAD)
+  [ -f "$APP_DIR/.next/BUILD_ID" ] && [ -f "$built_marker" ] && built=$(cat "$built_marker")
+  if [ -n "$built" ] && as_app git -C "$APP_DIR" diff --quiet "$built" "$head" -- . ':(exclude)deploy' ':(exclude)docs' ':(exclude)README.md' 2>/dev/null; then
+    step "빌드 건너뜀 (앱 코드가 마지막 빌드와 같습니다)"
+  else
+    step "설치와 빌드 (몇 분 걸립니다)"
+    systemctl stop owl-compile 2>/dev/null || true
+    as_app bash -c "cd '$APP_DIR' && npm ci --no-audit --no-fund && npm run build && git rev-parse HEAD > .next/owl-commit"
+  fi
 
   step "앱 서비스 등록"
   sed "s#^OWL_PUBLIC_URL=.*#OWL_PUBLIC_URL=https://$domain#" "$APP_DIR/deploy/owl-compile.env.example" > /etc/owl-compile.env
@@ -230,7 +238,13 @@ main() {
   sed "s/owl\.example\.com/$domain/g" "$APP_DIR/deploy/Caddyfile" > /etc/caddy/Caddyfile
   caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile
   systemctl enable caddy
-  systemctl restart caddy
+  if ! systemctl restart caddy; then
+    echo "--- Caddy 로그" >&2
+    journalctl -u caddy -n 30 --no-pager -o cat >&2 || true
+    echo "--- 80·443 포트를 쓰는 프로그램" >&2
+    ss -ltnp 2>/dev/null | grep -E ':(80|443) ' >&2 || echo "(없음)" >&2
+    die "Caddy가 켜지지 않았습니다. 위 로그를 보내 주세요."
+  fi
 
   step "인증서 발급 기다리는 중 (최대 3분)"
   if ! wait_for "https://$domain/api/health" 180; then
