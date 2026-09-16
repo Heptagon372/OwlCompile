@@ -118,6 +118,13 @@ describe('OWL_PUBLIC_URL', () => {
     const out = listJoinUrls({ host: 'localhost:3000', https: false, publicUrl: 'https://owl.example.com/some/path/', interfaces: MIXED });
     expect(out).toEqual([{ url: 'https://owl.example.com', kind: 'public' }]);
   });
+  it('종류는 주소로 정한다: 사설 IP는 lan, VPN은 vpn, 도메인·공인 IP는 public', () => {
+    const kindOf = (publicUrl: string) => listJoinUrls({ host: 'localhost:3000', https: false, publicUrl, interfaces: MIXED })[0].kind;
+    expect(kindOf('http://192.168.0.23:3000')).toBe('lan');
+    expect(kindOf('http://100.87.1.2:3000')).toBe('vpn');
+    expect(kindOf('http://3.39.12.34')).toBe('public');
+    expect(kindOf('https://owl.example.com')).toBe('public');
+  });
   it('잘못된 값이면 자동 감지로 돌아간다', () => {
     const out = listJoinUrls({ host: 'localhost:3000', https: false, publicUrl: 'not a url', interfaces: MIXED });
     expect(out[0].url).toBe('http://192.168.0.12:3000');

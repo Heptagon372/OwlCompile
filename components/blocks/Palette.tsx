@@ -19,9 +19,11 @@ const DELETE_DATA: DropData = { kind: 'delete', zone: 'palette' };
 const SURFACE: CSSProperties = { ['--notch-bg' as string]: 'var(--color-panel)' };
 
 export function Palette({
-  roles, roleNames, doc, onAppend, deleting, justDragged,
+  roles, ids: idsProp, roleNames, doc, onAppend, deleting, justDragged,
 }: {
   roles: readonly GameRole[];
+  /** 보일 블록 목록을 직접 준다 (협동 게임 = COOP_BLOCKS, docs/COOP_SPEC.md §2·§8). 없으면 roles 합집합 */
+  ids?: readonly BlockId[];
   /** 머리 줄에 보일 내 역할 이름 (데스크톱) */
   roleNames?: readonly string[];
   doc: Block[];
@@ -31,7 +33,7 @@ export function Palette({
   /** 방금 드래그가 끝났으면 true (드래그 뒤 따라오는 클릭 무시) */
   justDragged: () => boolean;
 }) {
-  const ids = paletteBlocks(roles);
+  const ids = idsProp ?? paletteBlocks(roles);
   const { setNodeRef, isOver } = useDroppable({ id: 'zone:palette', data: DELETE_DATA, disabled: !deleting });
   const hot = deleting && isOver;
   return (

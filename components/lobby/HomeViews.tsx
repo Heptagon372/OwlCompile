@@ -342,9 +342,10 @@ export function RoundsPanel({ rounds }: { rounds: RoundCardInfo[] }) {
       icon={<IconLayers />}
       right={<span className="hidden text-xs text-text-faint sm:inline">진행자가 이번 게임에서 할 라운드를 고릅니다</span>}
     >
-      <ol className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-7">
+      {/* 격자 2 / md 3 / lg 4 / 2xl 5열: 10개면 2xl에서 두 줄이 꼭 맞고, 7개처럼 홀수면 2열에서 마지막 카드가 남는 칸을 채운다 */}
+      <ol className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5">
         {rounds.map((m) => (
-          <li key={m.round} className="flex last:col-span-2 md:last:col-span-1">
+          <li key={m.round} className={`flex ${rounds.length % 2 === 1 ? 'last:col-span-2 md:last:col-span-1' : ''}`}>
             <NumberCard
               tone="dark"
               n={m.round}

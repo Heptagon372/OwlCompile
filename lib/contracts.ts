@@ -10,8 +10,11 @@ export type AccountRole = 'admin' | 'host' | 'player';
 export type AccountStatus = 'active' | 'disabled';
 export type InviteRole = 'host' | 'player';
 export type Phase = 'lobby' | 'coding' | 'sealed' | 'running' | 'scored' | 'finished';
-/** 라운드 번호 = 난이도 레벨 (1~7, FEATURE_V4 §1) */
-export type RoundNo = 1 | 2 | 3 | 4 | 5 | 6 | 7;
+/**
+ * 라운드 번호 = 난이도 레벨 (1~10, FEATURE_V4 §1 · docs/ROUNDS_8_10.md §4).
+ * 엔진의 GameMap.round 가 아직 1~7이면 그 경계에서 `as RoundNo` 로 넓힌다 (엔진 타입은 R8~R10 설치 때 넓어진다).
+ */
+export type RoundNo = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10;
 export type SealedBy = 'architect' | 'auto';
 /** 게임 배정 방식 (FEATURE_V4 §3): auto = 대기실 인원 자동 배정, self = 참가자가 팀·역할 직접 선택 */
 export type AssignMode = 'auto' | 'self';
@@ -74,22 +77,26 @@ export const LIMITS = {
 } as const;
 
 // ------------------------------------------------------------------ 라운드 선택 (FEATURE_V4 §1)
-export const ALL_ROUNDS: readonly RoundNo[] = [1, 2, 3, 4, 5, 6, 7];
+/** 고를 수 있는 라운드 전부 (1~10). 엔진에 맵이 없는 라운드는 화면에서 '준비 중', 서버에서 400 round_unavailable */
+export const ALL_ROUNDS: readonly RoundNo[] = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+export const MAX_ROUND: RoundNo = 10;
 export const DEFAULT_ROUNDS: readonly RoundNo[] = [1, 2, 3, 4, 5];
-export type RoundPresetId = 'intro' | 'standard' | 'all' | 'challenge';
+export type RoundPresetId = 'intro' | 'standard' | 'all' | 'challenge' | 'advanced';
+/** 라운드 프리셋 (docs/ROUNDS_8_10.md §4): 프리셋의 라운드 중 하나라도 엔진에 없으면 버튼을 잠근다 */
 export const ROUND_PRESETS: readonly { id: RoundPresetId; label: string; rounds: readonly RoundNo[] }[] = [
   { id: 'intro', label: '입문', rounds: [1, 2, 3] },
   { id: 'standard', label: '표준', rounds: [1, 2, 3, 4, 5] },
-  { id: 'all', label: '전체', rounds: [1, 2, 3, 4, 5, 6, 7] },
+  { id: 'all', label: '전체', rounds: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] },
   { id: 'challenge', label: '도전', rounds: [4, 5, 6, 7] },
+  { id: 'advanced', label: '심화', rounds: [8, 9, 10] },
 ];
 
-/** 올바른 라운드 목록인가: 1~7의 정수 1개 이상, 오름차순, 중복 없음 */
+/** 올바른 라운드 목록인가: 1~10의 정수 1개 이상, 오름차순, 중복 없음 */
 export function isRoundList(v: unknown): v is RoundNo[] {
   if (!Array.isArray(v) || v.length < 1 || v.length > ALL_ROUNDS.length) return false;
   for (let i = 0; i < v.length; i += 1) {
     const r: unknown = v[i];
-    if (typeof r !== 'number' || !Number.isInteger(r) || r < 1 || r > 7) return false;
+    if (typeof r !== 'number' || !Number.isInteger(r) || r < 1 || r > MAX_ROUND) return false;
     if (i > 0 && r <= (v[i - 1] as number)) return false;
   }
   return true;
@@ -244,7 +251,7 @@ export interface GameListResponse { games: GameSummary[] }
 
 // ------------------------------------------------------------------ 게임 요청
 /**
- * POST /api/games. teams: 2~10, rounds: 1~7 중 1개 이상 오름차순·중복 없음 (없으면 [1,2,3,4,5]),
+ * POST /api/games. teams: 2~10, rounds: 1~10 중 1개 이상 오름차순·중복 없음 (없으면 [1,2,3,4,5]),
  * mode: 없으면 'auto'. 잘못된 rounds → 400 invalid_rounds, 엔진에 없는 라운드 → 400 round_unavailable
  */
 export interface CreateGameRequest { teams: number; rounds?: RoundNo[]; mode?: AssignMode }
@@ -395,7 +402,7 @@ export interface StandingRow {
 export interface ProgramText { doc: Block[]; text: string }
 /**
  * 폰이 접속할 사이트 주소 후보 (origin, 경로 없음). 좋은 것부터.
- * public = OWL_PUBLIC_URL 또는 도메인, lan = 와이파이·유선 사설 주소, vpn = 100.64.0.0/10 (Tailscale 등)
+ * public = 도메인·공인 IP, lan = 와이파이·유선 사설 주소, vpn = 100.64.0.0/10 (Tailscale 등). OWL_PUBLIC_URL도 주소로 종류를 정한다
  */
 export interface JoinUrl { url: string; kind: 'public' | 'lan' | 'vpn' }
 export interface GameView {

@@ -8,8 +8,9 @@ import { HttpError, badRequest } from './http';
 
 const uid = z.string().max(40).optional();
 
+// 일반 블록: 협동 전용 toggle·spawn도 문서로는 받는다 (게임 1은 validate/run이 E_COOP_ONLY로 거절, docs/COOP_SPEC.md §2)
 const PlainSchema = z.object({
-  id: z.enum(['forward', 'jump', 'left', 'right', 'call', 'sleep']),
+  id: z.enum(['forward', 'jump', 'left', 'right', 'call', 'sleep', 'toggle', 'spawn']),
   uid,
 });
 

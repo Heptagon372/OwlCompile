@@ -1,8 +1,10 @@
 // 단위 의미론 검증 — docs/ENGINE_SPEC.md §9 항목 1~4. 손으로 만든 8×8 맵으로 검사한다.
-import type { Block, CatPatrol, Dir, GameMap, Outcome, Pos, Program, RunResult, Step } from './types';
-import { countBlocks } from './blocks';
+// + 협동 전용 블록(toggle·spawn)이 게임 1에서 거절되는지 (docs/COOP_SPEC.md §2·§10) — R1 실제 맵으로.
+import type { Block, BlockId, CatPatrol, Dir, GameMap, Outcome, Pos, Program, RunResult, Step } from './types';
+import { BLOCKS, BLOCK_ORDER, COOP_BLOCKS, ROLES, countBlocks, isCoopBlockId } from './blocks';
 import { lineIndex, pathKey, toText } from './text';
-import { validate } from './validate';
+import { containsCoopBlock, validate } from './validate';
+import { map as r1Map } from './rounds/r1';
 import { checkMap, run } from './run';
 import type { RunOptions } from './run';
 import { score } from './score';
@@ -417,11 +419,52 @@ function scoring(): Check[] {
   return c;
 }
 
+// ---------------------------------------------------------------- 협동 전용 블록 (COOP_SPEC §2): 게임 1은 거절한다
+
+function coopBlocks(): Check[] {
+  const c: Check[] = [];
+  const TG: Block = { id: 'toggle' };
+  const SP: Block = { id: 'spawn' };
+  const roleBlocks = (Object.keys(ROLES) as (keyof typeof ROLES)[]).flatMap((r) => ROLES[r].blocks);
+
+  // (a) 메타: 12개, BLOCK_ORDER 순서, 끝 2개가 toggle·spawn, ROLES에는 없음
+  c.push(eq('COOP_BLOCKS = BLOCK_ORDER 전체 12개', [COOP_BLOCKS.length, BLOCK_ORDER.length, [...COOP_BLOCKS]], [12, 12, BLOCK_ORDER]));
+  c.push(eq('BLOCK_ORDER 끝 = toggle, spawn', BLOCK_ORDER.slice(-2), ['toggle', 'spawn']));
+  c.push(eq('BLOCKS: toggle·spawn 메타 (COOP_SPEC §2 표)',
+    (['toggle', 'spawn'] as BlockId[]).map((id) => { const m = BLOCKS[id]; return [m.label, m.keyword, m.category, m.role, m.ticks, m.shape, m.deck, m.coop]; }),
+    [['색 바꾸기', 'toggle', 'special', 'architect', 1, 'plain', 0, true], ['상자 놓기', 'spawn', 'special', 'architect', 1, 'plain', 0, true]]));
+  c.push(eq('coop 플래그는 toggle·spawn에만', BLOCK_ORDER.filter(isCoopBlockId), ['toggle', 'spawn']));
+  c.push(check('ROLES는 toggle·spawn을 갖지 않는다', !roleBlocks.includes('toggle') && !roleBlocks.includes('spawn'), JSON.stringify(roleBlocks)));
+  c.push(eq('ROLES 블록 합집합 = 게임 1 블록 10개', new Set(roleBlocks).size, 10));
+  c.push(eq('containsCoopBlock: 깊이 무관, 알 수 없는 블록은 안 내려감',
+    [containsCoopBlock([F, rep(2, [ifw([], [SP])])]), containsCoopBlock([F, SL]), containsCoopBlock([{ id: 'fly' } as unknown as Block])], [true, false, false]));
+  c.push(eq('toText: 협동 블록 라벨 (두 줄)', toText([TG, SP]).lines.map((l) => l.text), ['색 바꾸기', '상자 놓기']));
+
+  // (b) validate: R1 실제 맵(cap 12)에서 E_COOP_ONLY (전부 보고, 표 순서 맨 끝)
+  c.push(eq('R1 맵 cap = 12', r1Map.cap, 12));
+  c.push(eq('validate([toggle], R1) → E_COOP_ONLY "협동 게임 전용 블록"', (() => { const v = validate([TG], r1Map); return [v.ok, v.codes, v.errors]; })(),
+    [false, ['E_COOP_ONLY'], ['협동 게임 전용 블록']]));
+  c.push(eq('validate: 깊이 무관 (반복·if 안의 spawn), 다른 코드와 함께 보고 (표 순서)',
+    validate([rep(0, [ifp([], [SP])]), C], r1Map).codes, ['E_CALL_NO_DEF', 'E_REPEAT_N', 'E_COOP_ONLY']));
+  c.push(eq('validate: 협동 블록도 블록 수에 센다', validate([TG, SP, F], r1Map).blocks, 3));
+
+  // (c) run: 컴파일 에러, 0틱
+  {
+    const r = go(r1Map, [SP]);
+    c.push(eq('run(R1, [spawn]) → error, 0틱, 컴파일 에러 문구', [r.outcome, r.ticks, r.trace.length, r.message], ['error', 0, 1, '컴파일 에러: 협동 게임 전용 블록']));
+    c.push(check('run: message startsWith 컴파일 에러', r.message.startsWith('컴파일 에러')));
+    const r2 = go(r1Map, [rep(4, [F]), rep(2, [TG]), R]);
+    c.push(eq('run: 정상 블록 사이에 toggle이 있어도 실행 전 컴파일 에러 (부엉이 제자리)', [r2.outcome, r2.ticks, r2.owl], ['error', 0, r2.trace[0].owl]));
+    c.push(eq('run: 알 수 없는 블록이 협동 블록보다 먼저 보고된다', go(r1Map, [TG, { id: 'fly' } as unknown as Block]).message, '컴파일 에러: 알 수 없는 블록'));
+  }
+  return c;
+}
+
 // ---------------------------------------------------------------- 진입점
 
 export function runCore(): Check[] {
   results.length = 0;
-  const checks = [...semantics(), ...counting(), ...text(), ...scoring()];
+  const checks = [...semantics(), ...counting(), ...text(), ...scoring(), ...coopBlocks()];
   // 모든 실행 결과의 공통 불변식
   const badTicks = results.filter((r) => r.ticks !== r.trace.length - 1);
   checks.push(check(`모든 실행(${results.length}건): ticks === trace.length − 1`, badTicks.length === 0));

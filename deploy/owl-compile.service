@@ -1,0 +1,20 @@
+# OWL COMPILE 앱 서버 (docs/DEPLOY_AWS.md 6단계)
+# 127.0.0.1에만 열어서 Caddy를 거쳐야만 들어올 수 있다. 그래서 OWL_TRUST_PROXY=1이 안전하다.
+[Unit]
+Description=OWL COMPILE (Next.js)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/home/ubuntu/OwlCompile
+EnvironmentFile=/etc/owl-compile.env
+ExecStart=/home/ubuntu/OwlCompile/node_modules/.bin/next start -H 127.0.0.1 -p 3000
+Restart=always
+RestartSec=3
+# /var/lib/owl-compile 을 만들어 User 소유로 둔다 (DB 위치)
+StateDirectory=owl-compile
+
+[Install]
+WantedBy=multi-user.target

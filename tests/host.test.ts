@@ -15,11 +15,14 @@ describe('round chips and presets', () => {
   it('never empties the list', () => {
     expect(toggleRound([4], 4)).toEqual([4]);
   });
-  it('recognises the four presets and custom mixes', () => {
+  it('recognises the five presets and custom mixes', () => {
+    // docs/ROUNDS_8_10.md §4: 전체 = 1~10, 심화 = 8~10 (1~7만 고르면 프리셋이 아닌 직접 조합)
     expect(presetOf([1, 2, 3])).toBe('intro');
     expect(presetOf([1, 2, 3, 4, 5])).toBe('standard');
-    expect(presetOf([1, 2, 3, 4, 5, 6, 7])).toBe('all');
+    expect(presetOf([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])).toBe('all');
+    expect(presetOf([1, 2, 3, 4, 5, 6, 7])).toBeNull();
     expect(presetOf([4, 5, 6, 7])).toBe('challenge');
+    expect(presetOf([8, 9, 10])).toBe('advanced');
     expect(presetOf([1, 3])).toBeNull();
   });
   it('writes short round labels', () => {

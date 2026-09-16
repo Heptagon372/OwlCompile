@@ -31,6 +31,7 @@ export function koHeadTokens(b: Block): CodeToken[] {
       return m ? [tk(m[1], 'call'), tk(' ', 'punct'), tk(m[2], 'keyword')] : [tk(BLOCKS.call.label, 'call')];
     }
     default:
+      // 일반 블록(협동 전용 색 바꾸기·상자 놓기 포함): 라벨 그대로 (엔진 toText 와 같다)
       return isKnownBlockId(b.id)
         ? [tk(BLOCKS[b.id].label, 'call')]
         : [tk(`? ${String((b as { id: unknown }).id)}`, 'comment')];

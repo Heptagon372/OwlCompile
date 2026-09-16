@@ -11,14 +11,17 @@ import { LOBBY_CHANNEL, subscribe, type BusEvent } from '@/lib/server/realtime';
 import type { SessionUser } from '@/lib/server/session';
 import { deleteGameById } from '@/lib/server/auth';
 import {
-  applyTransition, assignMember, computeStandings, createGame, createGameFromLobby, flushLobby, gameById, homePathFor,
-  joinFromLobby, joinGame, kickMember, leaveGame, lobbyArrive, lobbySnapshot, programOf, pullFromLobby, saveProgram,
-  submitProgram, teamsOf, tickAutoSeal, waitingUsers, type GameRow,
+  applyTransition, assignMember, availableRounds, computeStandings, createGame, createGameFromLobby, flushLobby, gameById,
+  homePathFor, joinFromLobby, joinGame, kickMember, leaveGame, lobbyArrive, lobbySnapshot, programOf, pullFromLobby,
+  saveProgram, submitProgram, teamsOf, tickAutoSeal, waitingUsers, type GameRow,
 } from '@/lib/server/game';
 import { buildView } from '@/lib/server/views';
 
 const ALL: GameRole[] = ['runner', 'turner', 'controller', 'architect'];
-const HAS_R67 = 6 in MAPS && 7 in MAPS;
+/** 엔진에 맵이 있는 라운드 (오름차순). R8~R10이 아직 없으면 1~7 (docs/ROUNDS_8_10.md §4: 없는 라운드는 round_unavailable) */
+const HAVE = availableRounds();
+/** 계약(1~10)에는 있지만 엔진에는 아직 없는 라운드 (없으면 빈 배열) */
+const MISSING = ALL_ROUNDS.filter((r) => !HAVE.includes(r));
 let seq = 0;
 
 function mkUser(role: SessionUser['role'] = 'player', name = `u${(seq += 1)}_${Math.random().toString(36).slice(2, 6)}`): SessionUser {
@@ -126,8 +129,11 @@ describe('자동 배정·라운드 순수 규칙', () => {
     expect(prevRoundOf([1, 3, 5], 3)).toBe(1);
     expect(prevRoundOf([1, 3, 5], 1)).toBeNull();
     expect(isRoundList([1, 3, 5])).toBe(true);
+    expect(ALL_ROUNDS).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
     expect(isRoundList([...ALL_ROUNDS])).toBe(true);
-    for (const bad of [[], [3, 1], [1, 1], [0], [8], [1.5], ['1'], null, [1, 2, 3, 4, 5, 6, 7, 7]]) {
+    expect(isRoundList([8, 9, 10])).toBe(true);
+    // 상한 10: 11은 거절, 0·중복·내림차순·정수 아님도 거절
+    for (const bad of [[], [3, 1], [1, 1], [0], [11], [1.5], ['1'], null, [1, 2, 3, 4, 5, 6, 7, 7], [...ALL_ROUNDS, 11]]) {
       expect(isRoundList(bad)).toBe(false);
     }
   });
@@ -137,12 +143,13 @@ describe('자동 배정·라운드 순수 규칙', () => {
 describe('라운드 선택', () => {
   it('잘못된 라운드 목록은 400 invalid_rounds, 기본은 [1,2,3,4,5]', () => {
     const host = mkUser('host');
-    for (const bad of [[], [3, 1], [1, 1], [0], [8], [2.5]]) {
+    for (const bad of [[], [3, 1], [1, 1], [0], [11], [2.5]]) {
       expect(caught(() => createGame(host, 2, { rounds: bad })).code).toBe('invalid_rounds');
     }
     const g = createGame(host, 2);
     expect(buildView(g, host).game).toMatchObject({ rounds: [1, 2, 3, 4, 5], round: 1, roundIndex: 0, mode: 'self' });
-    if (!HAS_R67) expect(caught(() => createGame(host, 2, { rounds: [5, 6] })).code).toBe('round_unavailable');
+    // 계약상 올바르지만 엔진에 아직 없는 라운드(예: R8~R10 설치 전)는 400 round_unavailable
+    if (MISSING.length > 0) expect(caught(() => createGame(host, 2, { rounds: [1, MISSING[0]] })).code).toBe('round_unavailable');
   });
 
   it('[1,3,5]: 고른 라운드만 순서대로, 되돌리기는 이전 선택 라운드로, R5 다음은 finished', () => {
@@ -199,11 +206,22 @@ describe('라운드 선택', () => {
     expect(playThrough(game)).toEqual([1, 2, 3, 4, 5]);
   });
 
-  it.skipIf(!HAS_R67)('7라운드 게임은 R6·R7까지 가고 R7 다음은 finished', () => {
-    const game = createGame(mkUser('host'), 2, { rounds: [...ALL_ROUNDS] });
-    expect(playThrough(game)).toEqual([1, 2, 3, 4, 5, 6, 7]);
+  it('엔진에 있는 라운드 전부로 만든 게임은 마지막 라운드까지 가고 그 다음은 finished', () => {
+    // R8~R10이 설치되면 HAVE = 1~10 (전체 프리셋), 아직이면 1~7
+    expect(HAVE.length).toBeGreaterThanOrEqual(7);
+    const game = createGame(mkUser('host'), 2, { rounds: HAVE });
+    expect(playThrough(game)).toEqual(HAVE);
+    if (MISSING.length === 0) expect(playThrough(createGame(mkUser('host'), 2, { rounds: [...ALL_ROUNDS] }))).toEqual([...ALL_ROUNDS]);
+  });
+
+  it.skipIf(!(6 in MAPS && 7 in MAPS))('도전 프리셋 [4,5,6,7]: R4부터 R7까지', () => {
     const challenge = createGame(mkUser('host'), 2, { rounds: [4, 5, 6, 7] });
     expect(playThrough(challenge)).toEqual([4, 5, 6, 7]);
+  });
+
+  it.skipIf(!(8 in MAPS && 9 in MAPS && 10 in MAPS))('심화 프리셋 [8,9,10]: R8부터 R10까지', () => {
+    const advanced = createGame(mkUser('host'), 2, { rounds: [8, 9, 10] });
+    expect(playThrough(advanced)).toEqual([8, 9, 10]);
   });
 });
 

@@ -59,11 +59,13 @@ function blockLabel(b: Block): string {
 }
 
 function PlacedBlock({ block, path }: { block: Block; path: Path }) {
-  const { editable, drag, openMenu, hlKey, flash, onHover } = useEditor();
+  const { editable, drag, openMenu, hlKey, flash, onHover, crumbled } = useEditor();
   const uid = block.uid ?? `p${path.join('.')}`;
   // 코드 줄 ↔ 블록 호버 연동 · 놓는 순간 네온 링 (FEATURE_V4 §4). 가장 안쪽 카드가 먼저 받고 전파를 멈춘다
   const highlight = hlKey !== null && hlKey === pathKey(path);
   const flashKey = flash && block.uid && flash.uid === block.uid ? flash.n : null;
+  // 협동 재생에서 무너진 블록 (COOP_SPEC §8·§9.4): 카드 요소에 data-crumble → globals.css 가 무너뜨린다
+  const crumble = !!block.uid && crumbled.has(block.uid);
   const onMouseOver = (e: MouseEvent) => {
     e.stopPropagation();
     onHover(path);
@@ -106,6 +108,7 @@ function PlacedBlock({ block, path }: { block: Block; path: Path }) {
         className={cls}
         highlight={highlight}
         flashKey={flashKey}
+        data-crumble={crumble ? '' : undefined}
         onMouseOver={onMouseOver}
         headProps={headProps}
         bodyProps={bodyProps}
@@ -122,6 +125,7 @@ function PlacedBlock({ block, path }: { block: Block; path: Path }) {
       className={cls}
       highlight={highlight}
       flashKey={flashKey}
+      data-crumble={crumble ? '' : undefined}
       onMouseOver={onMouseOver}
       {...bodyProps}
       {...headProps}

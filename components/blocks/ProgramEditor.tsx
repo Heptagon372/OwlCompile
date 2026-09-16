@@ -57,6 +57,10 @@ export interface ProgramEditorProps {
   aside?: ReactNode;
   /** 블록 옆 네온 코드 패널 (기본 true) */
   showCode?: boolean;
+  /** 팔레트에 보일 블록 목록 (협동 게임 = COOP_BLOCKS, docs/COOP_SPEC.md §2·§8). 없으면 roles 합집합 */
+  palette?: readonly BlockId[];
+  /** 협동 재생에서 무너진 블록 uid 목록 (COOP_SPEC §8): 그 카드에 data-crumble → 무너짐 애니메이션. 문서에서는 지우지 않는다 */
+  crumbled?: readonly string[];
 }
 
 /** 편집기 본문 줄 번호 거터 폭 (--notch-bg 는 v4 에서 쓰지 않지만 넘겨도 무해) */
@@ -78,7 +82,7 @@ function opUid(op: EditOp): string | null {
 }
 
 export function ProgramEditor({
-  doc, editable, roles, onOp, onDragActive, overlay, header, toolbar, aside, showCode = true,
+  doc, editable, roles, onOp, onDragActive, overlay, header, toolbar, aside, showCode = true, palette, crumbled,
 }: ProgramEditorProps) {
   const toast = useToast();
   const sensors = useEditorSensors();
@@ -338,7 +342,10 @@ export function ProgramEditor({
   };
 
   const hlKey = codeHover ? pathKey(codeHover) : null;
-  const ctx: EditorContextValue = { doc, editable, drag, validKeys, openMenu, hlKey, flash, onHover: onBlockHover };
+  const crumbledSet = useMemo<ReadonlySet<string>>(() => new Set(crumbled ?? []), [crumbled]);
+  const ctx: EditorContextValue = {
+    doc, editable, drag, validKeys, openMenu, hlKey, flash, onHover: onBlockHover, crumbled: crumbledSet,
+  };
   const placedDrag = drag?.data.kind === 'placed';
 
   // 코드 줄 글로우: 번쩍인 카드의 지금 경로 (새 줄이면 CodeView 가 타이핑 연출을 우선한다)
@@ -465,6 +472,7 @@ export function ProgramEditor({
               {editable ? (
                 <Palette
                   roles={roles}
+                  ids={palette}
                   roleNames={roles.map((r) => ROLE_LABEL[r])}
                   doc={doc}
                   onAppend={handleAppend}

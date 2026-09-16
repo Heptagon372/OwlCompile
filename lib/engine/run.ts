@@ -7,7 +7,7 @@ import type {
 } from './types';
 import { countBlocks, isKnownBlockId, slotsOf } from './blocks';
 import { lineIndex, pathKey } from './text';
-import { containsBlock, findDef } from './validate';
+import { containsBlock, containsCoopBlock, findDef } from './validate';
 
 export type { RunOptions } from './types';   // 스펙 §6: run.ts가 RunOptions를 내보낸다
 
@@ -89,6 +89,7 @@ export interface Action { block: ActionId; path: number[]; line: number }
 
 export interface Sensors { wallAhead(): boolean; pitAhead(): boolean }
 
+/** 게임 1이 실행하는 액션. 협동 전용 toggle·spawn은 여기 없다 → actionsOf가 절대 내지 않는다 (compileError가 먼저 막는다). */
 const ACTIONS = new Set<string>(['forward', 'jump', 'left', 'right', 'sleep']);
 
 /**
@@ -132,6 +133,7 @@ export function compileError(program: Program): string | null {
   const unknown = (list: Block[]): boolean =>
     list.some((b) => !isKnownBlockId(b.id) || slotsOf(b).some(unknown));
   if (unknown(program)) return '알 수 없는 블록';
+  if (containsCoopBlock(program)) return '협동 게임 전용 블록';   // COOP_SPEC §2: 게임 1은 toggle·spawn을 실행하지 않는다
   const def = findDef(program);
   if (def && containsBlock(def.body, 'call')) return '함수 F 안에서 F를 부를 수 없다';
   if (!def && containsBlock(program, 'call')) return '함수 F가 정의되지 않았다';
@@ -242,6 +244,9 @@ function createStepper(pm: ParsedMap, cat: CatPatrol | undefined) {
         w.owl.x = target.x; w.owl.y = target.y;   // 중간 칸은 전부 무시
         return enter(target);
       }
+      default:
+        // toggle·spawn: 협동 엔진 전용. ACTIONS에 없어 여기 오지 않는다 (타입 완전성용)
+        return null;
     }
   };
 

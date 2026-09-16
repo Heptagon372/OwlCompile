@@ -2,7 +2,7 @@
 // OWL COMPILE — 제출 가능 여부 검사 (docs/ENGINE_SPEC.md §4)
 // 전부 검사하고 전부 보고한다(첫 에러에서 멈추지 않음).
 import type { Block, GameMap, Program, Validation, ValidationCode } from './types';
-import { countBlocks, isKnownBlockId, slotsOf } from './blocks';
+import { countBlocks, isCoopBlockId, isKnownBlockId, slotsOf } from './blocks';
 
 const MESSAGES: Record<Exclude<ValidationCode, 'E_CAP'>, string> = {
   E_EMPTY: '블록이 하나도 없다',
@@ -12,13 +12,19 @@ const MESSAGES: Record<Exclude<ValidationCode, 'E_CAP'>, string> = {
   E_RECURSION: '함수 F 안에서 F를 부를 수 없다',
   E_REPEAT_N: '반복 횟수는 1~9',
   E_UNKNOWN_BLOCK: '알 수 없는 블록',
+  E_COOP_ONLY: '협동 게임 전용 블록',
 };
 
 /** 보고 순서 = 스펙 표 순서. */
 const CODE_ORDER: ValidationCode[] = [
   'E_EMPTY', 'E_CAP', 'E_DEF_NESTED', 'E_DEF_MULTI',
-  'E_CALL_NO_DEF', 'E_RECURSION', 'E_REPEAT_N', 'E_UNKNOWN_BLOCK',
+  'E_CALL_NO_DEF', 'E_RECURSION', 'E_REPEAT_N', 'E_UNKNOWN_BLOCK', 'E_COOP_ONLY',
 ];
+
+/** 트리 안 어딘가에 협동 게임 전용 블록(toggle·spawn)이 있는가. 알 수 없는 블록은 내려가지 않는다. */
+export function containsCoopBlock(blocks: Block[]): boolean {
+  return blocks.some((b) => (isKnownBlockId(b.id) && isCoopBlockId(b.id)) || slotsOf(b).some(containsCoopBlock));
+}
 
 /** 트리 안 어딘가(깊이 무관)에 id 블록이 있는가. 알 수 없는 블록은 내려가지 않는다. */
 export function containsBlock(blocks: Block[], id: Block['id']): boolean {
@@ -50,6 +56,8 @@ export function validate(program: Program, map: GameMap): Validation {
   const walk = (list: Block[], top: boolean): void => {
     for (const b of list) {
       if (!isKnownBlockId(b.id)) { found.add('E_UNKNOWN_BLOCK'); continue; }
+      // 협동 게임 전용 블록은 게임 1(라운드 게임)에서 쓸 수 없다 (COOP_SPEC §2). validateCoop은 이 규칙만 뺀다.
+      if (isCoopBlockId(b.id)) found.add('E_COOP_ONLY');
       if (b.id === 'def') {
         defCount += 1;
         if (!top) found.add('E_DEF_NESTED');

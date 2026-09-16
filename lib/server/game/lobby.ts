@@ -27,11 +27,11 @@ function pickCode(): string {
   throw conflict('만들 수 있는 게임 코드가 없습니다. 끝난 게임을 지운 뒤 다시 시도해 주세요.', 'no_code');
 }
 
-/** 라운드 선택 검사: 1~7 중 1개 이상·오름차순·중복 없음(400 invalid_rounds), 엔진에 있는 라운드만(400 round_unavailable) */
+/** 라운드 선택 검사: 1~10 중 1개 이상·오름차순·중복 없음(400 invalid_rounds), 엔진에 있는 라운드만(400 round_unavailable) */
 export function checkRounds(input: readonly number[] | undefined): RoundNo[] {
   const rounds: unknown = input === undefined ? [...DEFAULT_ROUNDS] : [...input];
   if (!isRoundList(rounds)) {
-    throw badRequest('라운드는 1~7 중에서 1개 이상, 작은 번호부터 중복 없이 골라 주세요.', 'invalid_rounds');
+    throw badRequest('라운드는 1~10 중에서 1개 이상, 작은 번호부터 중복 없이 골라 주세요.', 'invalid_rounds');
   }
   const have = new Set(availableRounds());
   const missing = rounds.filter((r) => !have.has(r));

@@ -1,15 +1,18 @@
 // OWL COMPILE — API 종단 시나리오 (docs/WEBSITE_SPEC.md §10).
-// 실행 중인 서버(BASE_URL, 기본 http://localhost:3100)에 HTTP로 붙어 관리자 → 초대 → 가입 → 게임 → R1~R5를 돈다.
+// 실행 중인 서버(BASE_URL, 기본 http://localhost:3100)에 HTTP로 붙어 관리자 → 초대 → 가입 → 게임 → R1~R5를 돈 뒤,
+// 엔진에 있는 라운드 전부(R8~R10 설치 뒤엔 1~10)로 팀 10개 게임을 한 번 더 돈다 (docs/ROUNDS_8_10.md §4).
 // 사용: BASE_URL=http://localhost:3100 npm run e2e:api   (빈 DB에서 실행: 사용자 0명이어야 /api/setup이 열린다)
 // 서버 쪽 스크립트라 정답(SOLUTIONS)을 엔진에서 직접 가져온다. 실패가 하나라도 있으면 exit 1.
 import { MAPS, ROLES, ROUND_EXTRAS, SOLUTIONS, countBlocks, type Block, type BlockId, type Program } from '../lib/engine';
 import {
-  API, GAME_ROLES, TEAM_PRESETS, autoRoleSplit, autoRolesForNewcomer,
+  ALL_ROUNDS, API, GAME_ROLES, TEAM_PRESETS, autoRoleSplit, autoRolesForNewcomer,
   type GameView, type LobbyEvent, type LobbyResponse, type ResultView,
 } from '../lib/contracts';
 
-/** 엔진에 R6·R7이 있으면 7라운드 게임까지 돈다 (없으면 round_unavailable 확인만) */
-const HAS_R67 = 6 in MAPS && 7 in MAPS;
+/** 엔진에 맵이 있는 라운드 전부 (오름차순). 마지막 시나리오는 이 라운드를 모두 돈다 (R8~R10이 설치되면 1~10) */
+const ENGINE_ROUNDS = Object.keys(MAPS).map(Number).filter((n) => Number.isInteger(n) && n >= 1 && n <= 10).sort((a, b) => a - b);
+/** 계약(1~10)에는 있지만 엔진에 아직 없는 라운드 → 서버는 400 round_unavailable */
+const MISSING_ROUNDS = ALL_ROUNDS.filter((r) => !ENGINE_ROUNDS.includes(r));
 
 const BASE = (process.env.BASE_URL ?? 'http://localhost:3100').replace(/\/+$/, '');
 const PASSWORD = 'owl-e2e-pass-1234';
@@ -748,18 +751,19 @@ async function teamsAndRounds(w: World, ps: Client[]): Promise<void> {
     const r = await host.post(API.games, body);
     check(r.status === 400, `${label} → 400`, brief(r));
   }
-  for (const rounds of [[3, 1], [], [8], [1, 1]]) {
+  for (const rounds of [[3, 1], [], [11], [0], [1, 1]]) {
     const r = await host.post(API.games, { teams: 2, rounds, mode: 'self' });
     check(r.status === 400 && ['invalid_rounds', 'invalid_input'].includes(errCode(r) ?? ''),
       `rounds ${JSON.stringify(rounds)} → 400`, brief(r));
   }
-  if (!HAS_R67) {
-    const r = await host.post(API.games, { teams: 2, rounds: [6, 7], mode: 'self' });
-    check(r.status === 400 && errCode(r) === 'round_unavailable', '엔진에 없는 라운드 → 400 round_unavailable', brief(r));
+  if (MISSING_ROUNDS.length > 0) {
+    const r = await host.post(API.games, { teams: 2, rounds: [1, MISSING_ROUNDS[0]], mode: 'self' });
+    check(r.status === 400 && errCode(r) === 'round_unavailable',
+      `엔진에 없는 라운드 R${MISSING_ROUNDS[0]} → 400 round_unavailable`, brief(r));
   }
 
-  // 팀 10개 게임 (가능하면 7라운드)
-  const allRounds = HAS_R67 ? [1, 2, 3, 4, 5, 6, 7] : [1, 2, 3, 4, 5];
+  // 팀 10개 게임: 엔진에 있는 라운드 전부 (R8~R10 설치 뒤엔 1~10)
+  const allRounds = ENGINE_ROUNDS;
   const big = await host.post(API.games, { teams: 10, rounds: allRounds, mode: 'self' });
   must(big.status === 201, `팀 10개 게임 생성 (rounds ${JSON.stringify(allRounds)})`, brief(big));
   const code: string = big.data.code;
@@ -799,7 +803,8 @@ async function teamsAndRounds(w: World, ps: Client[]): Promise<void> {
   must(back.status === 200, '팀 10개 게임: coding → lobby', brief(back));
   const seen = await playAllRounds(host, code, `팀 10개·${allRounds.length}라운드`);
   check(JSON.stringify(seen) === JSON.stringify(allRounds), `진행한 라운드 ${JSON.stringify(seen)}`, seen);
-  if (HAS_R67) check(seen.includes(6) && seen.includes(7), '7라운드 게임은 R6·R7까지 간다', seen);
+  check(seen[seen.length - 1] === allRounds[allRounds.length - 1],
+    `엔진의 마지막 라운드 R${allRounds[allRounds.length - 1]}까지 간다`, seen);
 
   // [1,3,5]만 고른 게임
   const pick = await host.post(API.games, { teams: 2, rounds: [1, 3, 5], mode: 'self' });

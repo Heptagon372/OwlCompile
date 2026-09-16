@@ -1,6 +1,6 @@
 // 게임 테이블 행 타입과 조회 헬퍼. 서버 전용.
 import {
-  DEFAULT_ROUNDS, isRoundList, type AssignMode, type GameRole, type Phase, type RoundNo, type SealedBy,
+  DEFAULT_ROUNDS, MAX_ROUND, isRoundList, type AssignMode, type GameRole, type Phase, type RoundNo, type SealedBy,
 } from '@/lib/contracts';
 import type { Block, GameMap, ScoreLine, Step } from '@/lib/engine';
 import { MAPS } from '@/lib/engine';
@@ -85,11 +85,11 @@ export interface ResultRow {
 
 export const CODE_PATTERN = /^\d{4}$/;
 
-/** 엔진에 맵이 있는 라운드 (오름차순). R6·R7이 엔진에 아직 없으면 1~5 */
+/** 엔진에 맵이 있는 라운드 (오름차순, 1~10). 아직 설치되지 않은 라운드(예: R8~R10)는 빠진다 (docs/ROUNDS_8_10.md §4) */
 export function availableRounds(): RoundNo[] {
   return Object.keys(MAPS)
     .map(Number)
-    .filter((n): n is RoundNo => Number.isInteger(n) && n >= 1 && n <= 7)
+    .filter((n): n is RoundNo => Number.isInteger(n) && n >= 1 && n <= MAX_ROUND)
     .sort((a, b) => a - b);
 }
 

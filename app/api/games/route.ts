@@ -13,7 +13,7 @@ export const GET = handle(async () => {
   return json<GameListResponse>({ games: listGamesFor(user) });
 });
 
-// rounds 값의 규칙(1~7, 오름차순, 중복 없음, 엔진에 있음)은 lib에서 검사한다 (400 invalid_rounds / round_unavailable)
+// rounds 값의 규칙(1~10, 오름차순, 중복 없음, 엔진에 있음)은 lib에서 검사한다 (400 invalid_rounds / round_unavailable)
 const Body = z.object({
   teams: z.number().int().min(LIMITS.minTeams).max(LIMITS.maxTeams),
   rounds: z.array(z.number()).max(20).optional(),
@@ -21,7 +21,7 @@ const Body = z.object({
 });
 
 /**
- * 진행자: 새 게임 {teams: 2~10, rounds?: [1..7] (기본 [1,2,3,4,5]), mode?: 'auto'|'self' (기본 auto)}
+ * 진행자: 새 게임 {teams: 2~10, rounds?: [1..10] (기본 [1,2,3,4,5]), mode?: 'auto'|'self' (기본 auto)}
  * → 201 {code, assigned, leftWaiting, placements}. auto면 대기 중인 사람을 바로 배정하고 각자에게 'assigned'를 보낸다.
  */
 export const POST = handle(async (req) => {

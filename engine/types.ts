@@ -8,13 +8,14 @@ export interface OwlState extends Pos { dir: Dir }
 export type BlockId =
   | 'forward' | 'jump' | 'left' | 'right'
   | 'repeat' | 'if_wall' | 'if_pit'
-  | 'def' | 'call' | 'sleep';
+  | 'def' | 'call' | 'sleep'
+  | 'toggle' | 'spawn';                       // 협동 게임 전용 (docs/COOP_SPEC.md §2). 게임 1에서는 E_COOP_ONLY
 
-/** 1틱을 소비하는 액션 블록 id. */
-export type ActionId = 'forward' | 'jump' | 'left' | 'right' | 'sleep';
+/** 1틱을 소비하는 액션 블록 id. toggle·spawn은 협동 엔진만 실행한다(게임 1 actionsOf는 내지 않는다). */
+export type ActionId = 'forward' | 'jump' | 'left' | 'right' | 'sleep' | 'toggle' | 'spawn';
 
 export type Block =
-  | { id: 'forward' | 'jump' | 'left' | 'right' | 'call' | 'sleep'; uid?: string }
+  | { id: 'forward' | 'jump' | 'left' | 'right' | 'call' | 'sleep' | 'toggle' | 'spawn'; uid?: string }
   | { id: 'repeat'; n: number; body: Block[]; uid?: string }
   | { id: 'if_wall' | 'if_pit'; then: Block[]; else: Block[]; uid?: string }
   | { id: 'def'; body: Block[]; uid?: string };
@@ -86,4 +87,5 @@ export interface Validation {
 }
 export type ValidationCode =
   | 'E_EMPTY' | 'E_CAP' | 'E_DEF_NESTED' | 'E_DEF_MULTI'
-  | 'E_CALL_NO_DEF' | 'E_RECURSION' | 'E_REPEAT_N' | 'E_UNKNOWN_BLOCK';
+  | 'E_CALL_NO_DEF' | 'E_RECURSION' | 'E_REPEAT_N' | 'E_UNKNOWN_BLOCK'
+  | 'E_COOP_ONLY';   // 협동 게임 전용 블록(toggle·spawn)이 게임 1 프로그램에 있음 (docs/COOP_SPEC.md §2)

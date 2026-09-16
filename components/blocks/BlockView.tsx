@@ -4,8 +4,11 @@ import { slotsOf } from '@/lib/engine/blocks';
 import { BlockCard } from './BlockCard';
 import { CBlock, isCBlockId } from './CBlock';
 
-/** 블록 하나와 그 안의 블록 전부 */
-export function BlockView({ block, className = '' }: { block: Block; className?: string }) {
+/** 블록 하나와 그 안의 블록 전부. crumbled 에 든 uid 의 카드는 data-crumble (협동 재생의 무너짐, COOP_SPEC §8) */
+export function BlockView({
+  block, className = '', crumbled,
+}: { block: Block; className?: string; crumbled?: ReadonlySet<string> }) {
+  const crumble = !!block.uid && !!crumbled?.has(block.uid);
   if (block.id === 'repeat' || block.id === 'if_wall' || block.id === 'if_pit' || block.id === 'def') {
     const slots = slotsOf(block);
     return (
@@ -13,17 +16,18 @@ export function BlockView({ block, className = '' }: { block: Block; className?:
         id={block.id}
         n={block.id === 'repeat' ? block.n : undefined}
         className={className}
+        data-crumble={crumble ? '' : undefined}
         mouths={slots.map((s, i) => (
           <div key={i} className="stack">
             {s.map((c, j) => (
-              <BlockView key={c.uid ?? j} block={c} />
+              <BlockView key={c.uid ?? j} block={c} crumbled={crumbled} />
             ))}
           </div>
         ))}
       />
     );
   }
-  return <BlockCard id={block.id} className={className} />;
+  return <BlockCard id={block.id} className={className} data-crumble={crumble ? '' : undefined} />;
 }
 
 /** 팔레트 모양 카드: C-블록은 입을 얇게 */

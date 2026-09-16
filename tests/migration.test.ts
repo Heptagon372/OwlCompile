@@ -1,4 +1,5 @@
-// 버전형 DB 마이그레이션 (docs/FEATURE_V4.md §6): 옛 스키마로 만든 DB 파일을 v2로 올린 뒤 데이터·제약을 확인한다.
+// 버전형 DB 마이그레이션 (docs/FEATURE_V4.md §6 · docs/ROUNDS_8_10.md §4 · docs/COOP_SPEC.md §4):
+// 옛 스키마(v0)나 v2로 만든 DB 파일을 v3(games.round 1~10 + 협동 테이블)로 올린 뒤 데이터·제약을 확인한다.
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import Database from 'better-sqlite3';
 import { mkdtempSync, rmSync } from 'node:fs';
@@ -115,6 +116,25 @@ create table if not exists game_players (
 );
 `;
 
+/**
+ * v2 스키마 (FEATURE_V4 §6, R8~R10 전): games.round 1~7 + rounds·mode 열, members unique(team_id, user_id, role), game_exits.
+ * 협동 테이블은 아직 없다. 파일의 user_version 은 2로 둔다.
+ */
+const V2_SCHEMA = `${OLD_SCHEMA_TODAY
+  .replace(
+    '  round integer not null default 1 check (round between 1 and 5),\n',
+    "  round integer not null default 1 check (round between 1 and 7),\n  rounds text not null default '[1,2,3,4,5]',\n  mode text not null default 'self' check (mode in ('auto','self')),\n",
+  )
+  .replace('unique (team_id, role)', 'unique (team_id, user_id, role)')}
+create table if not exists game_exits (
+  game_id text not null references games on delete cascade,
+  user_id text not null references users on delete cascade,
+  reason text not null check (reason in ('kicked','left')),
+  at text not null,
+  primary key (game_id, user_id)
+);
+`;
+
 /** 열 추가식 마이그레이션이 생기기 전의 가장 오래된 스키마 (shown_up_to·run_seq·doc·reran·prepatch_doc·game_players 없음) */
 const OLD_SCHEMA_OLDEST = OLD_SCHEMA_TODAY
   .replace(',\n  shown_up_to integer not null default 0', '')
@@ -189,14 +209,15 @@ afterEach(() => {
   rmSync(dir, { recursive: true, force: true });
 });
 
-/** 옛 스키마 파일을 만들고 표본을 넣은 뒤 닫는다. 넣은 행을 돌려준다. */
-function buildOld(schema: string, oldest: boolean): { path: string; before: Record<string, unknown[]>; games: unknown[] } {
+/** 옛 스키마 파일을 만들고 표본을 넣은 뒤 닫는다. 넣은 행을 돌려준다. version = 파일에 적을 user_version (v0 또는 v2) */
+function buildOld(schema: string, oldest: boolean, version = 0): { path: string; before: Record<string, unknown[]>; games: unknown[] } {
   const path = join(dir, 'owl.db');
   const db = new Database(path);
   db.pragma('foreign_keys = ON');
   db.exec(schema);
   seed(db, oldest);
-  expect(schemaVersion(db)).toBe(0);
+  if (version > 0) db.pragma(`user_version = ${version}`);
+  expect(schemaVersion(db)).toBe(version);
   const tables = Object.keys(TABLES).filter((t) => !(oldest && t === 'game_players'));
   const before = dump(db, tables);
   const games = db.prepare('select * from games order by id').all();
@@ -210,14 +231,18 @@ function open(path: string) {
   return getDb();
 }
 
-/** v2 제약이 걸려 있는지 확인 */
-function expectV2Constraints(db: Database.Database): void {
+/** 협동 게임 테이블 (docs/COOP_SPEC.md §4) */
+const COOP_TABLES = ['coop_games', 'coop_teams', 'coop_members', 'coop_programs', 'coop_worlds', 'coop_runs', 'coop_clears', 'coop_exits'];
+
+/** v3 제약이 걸려 있는지 확인: games.round 1~10, v2의 members·game_exits, 협동 테이블 */
+function expectV3Constraints(db: Database.Database): void {
   expect(schemaVersion(db)).toBe(SCHEMA_VERSION);
   expect(db.pragma('foreign_keys', { simple: true })).toBe(1);
   expect(db.prepare('pragma foreign_key_check').all()).toEqual([]);
   expect(db.prepare('pragma integrity_check').pluck().get()).toBe('ok');
   const gamesSql = db.prepare("select sql from sqlite_master where name = 'games'").pluck().get() as string;
-  expect(gamesSql).toContain('between 1 and 7');
+  expect(gamesSql).toContain('between 1 and 10');
+  expect(gamesSql).not.toContain('between 1 and 7');
   const membersSql = db.prepare("select sql from sqlite_master where name = 'members'").pluck().get() as string;
   expect(membersSql).toContain('unique (team_id, user_id, role)');
   expect(membersSql).not.toContain('unique (team_id, role)');
@@ -225,10 +250,12 @@ function expectV2Constraints(db: Database.Database): void {
   expect(idx).toEqual(expect.arrayContaining(['members_game', 'members_user']));
   expect(db.prepare("select name from sqlite_master where name like '%__v2'").all()).toEqual([]);
 
-  // round 1~7 허용, 8은 거절
+  // round 1~10 허용 (7·10), 11은 거절
   db.prepare(`insert into games (id, code, host_id, round, rounds, mode, created_at)
               values ('g7', '7777', 'u-host', 7, '[6,7]', 'auto', ?)`).run(T);
-  expect(() => db.prepare(`insert into games (id, code, host_id, round, created_at) values ('g8', '8888', 'u-host', 8, ?)`).run(T))
+  db.prepare(`insert into games (id, code, host_id, round, rounds, mode, created_at)
+              values ('g10', '1010', 'u-host', 10, '[8,9,10]', 'auto', ?)`).run(T);
+  expect(() => db.prepare(`insert into games (id, code, host_id, round, created_at) values ('g11', '1111', 'u-host', 11, ?)`).run(T))
     .toThrow(/CHECK/);
   expect(() => db.prepare(`insert into games (id, code, host_id, mode, created_at) values ('g9', '9999', 'u-host', 'x', ?)`).run(T))
     .toThrow(/CHECK/);
@@ -244,9 +271,27 @@ function expectV2Constraints(db: Database.Database): void {
   expect(db.prepare("select count(*) from members where game_id = 'g2'").pluck().get()).toBe(0);
   // 새 테이블 game_exits
   db.prepare(`insert into game_exits (game_id, user_id, reason, at) values ('g1', 'u-b', 'kicked', ?)`).run(T);
+  // 협동 테이블 (v3): 전부 있고, 제약(팀 라운드 1~3 · 부엉이 0~3 · 외래키 cascade)이 걸려 있다
+  const names = db.prepare("select name from sqlite_master where type = 'table' and name like 'coop_%'").pluck().all();
+  expect(names).toEqual(expect.arrayContaining(COOP_TABLES));
+  const coopIdx = db.prepare("select name from sqlite_master where type = 'index' and tbl_name like 'coop_%'").pluck().all();
+  expect(coopIdx).toEqual(expect.arrayContaining(['coop_teams_game', 'coop_members_user']));
+  db.prepare(`insert into coop_games (id, code, host_id, created_at) values ('c1', '4321', 'u-host', ?)`).run(T);
+  expect(db.prepare("select phase, mode, minutes from coop_games where id = 'c1'").get()).toEqual({ phase: 'lobby', mode: 'auto', minutes: 20 });
+  db.prepare(`insert into coop_teams (id, game_id, name, color, seat, round) values ('ct1', 'c1', '수리부엉이', '#9B6BFF', 0, 3)`).run();
+  expect(() => db.prepare(`insert into coop_teams (id, game_id, name, color, seat, round) values ('ct2', 'c1', '올빼미', '#5B8CFF', 1, 4)`).run())
+    .toThrow(/CHECK/);
+  db.prepare(`insert into coop_members (id, game_id, team_id, user_id, owl, joined_at) values ('cm1', 'c1', 'ct1', 'u-a', 3, ?)`).run(T);
+  expect(() => db.prepare(`insert into coop_members (id, game_id, team_id, user_id, owl, joined_at) values ('cm2', 'c1', 'ct1', 'u-b', 4, ?)`).run(T))
+    .toThrow(/CHECK/);
+  db.prepare(`insert into coop_programs (team_id, owl) values ('ct1', 0)`).run();
+  db.prepare("delete from coop_games where id = 'c1'").run();
+  expect(db.prepare("select count(*) from coop_teams where game_id = 'c1'").pluck().get()).toBe(0);
+  expect(db.prepare("select count(*) from coop_programs where team_id = 'ct1'").pluck().get()).toBe(0);
+  expect(db.prepare('pragma foreign_key_check').all()).toEqual([]);
 }
 
-describe('버전형 마이그레이션 v0 → v2', () => {
+describe('버전형 마이그레이션 v0 → v3', () => {
   it('v4 직전 스키마: 모든 행이 그대로 남고 games에 rounds·mode가 생긴다', () => {
     const { path, before, games } = buildOld(OLD_SCHEMA_TODAY, false);
     const db = open(path);
@@ -254,7 +299,7 @@ describe('버전형 마이그레이션 v0 → v2', () => {
     const after = db.prepare('select * from games order by id').all() as Record<string, unknown>[];
     expect(after).toEqual((games as Record<string, unknown>[]).map((g) => ({ ...g, rounds: '[1,2,3,4,5]', mode: 'self' })));
     expect(after[0]).toMatchObject({ round: 3, phase: 'scored', shown_up_to: 2, timer_remaining: 40, running_team_id: 't-a', autoplay: 0 });
-    expectV2Constraints(db);
+    expectV3Constraints(db);
   });
 
   it('가장 오래된 스키마: 열 추가식 마이그레이션 + game_players 채우기 + v2', () => {
@@ -271,7 +316,7 @@ describe('버전형 마이그레이션 v0 → v2', () => {
       { game_id: 'g1', user_id: 'u-b', team_id: 't-b' },
       { game_id: 'g2', user_id: 'u-b', team_id: 't-c' },
     ]);
-    expectV2Constraints(db);
+    expectV3Constraints(db);
   });
 
   it('다시 열어도 아무것도 바뀌지 않는다 (한 번만 올린다)', () => {
@@ -282,12 +327,48 @@ describe('버전형 마이그레이션 v0 → v2', () => {
     expect(dump(again, Object.keys(TABLES))).toEqual(first);
   });
 
-  it('빈 DB는 처음부터 v2 스키마로 만들어진다', () => {
+  it('빈 DB는 처음부터 v3 스키마로 만들어진다 (round 1~10, 협동 테이블)', () => {
     const db = open(join(dir, 'fresh.db'));
-    expect(schemaVersion(db)).toBe(SCHEMA_VERSION);
+    expect(SCHEMA_VERSION).toBe(3);
+    expect(schemaVersion(db)).toBe(3);
     const cols = (db.prepare('pragma table_info(games)').all() as { name: string }[]).map((c) => c.name);
     expect(cols).toEqual(expect.arrayContaining(['rounds', 'mode', 'shown_up_to']));
     const membersSql = db.prepare("select sql from sqlite_master where name = 'members'").pluck().get() as string;
     expect(membersSql).toContain('unique (team_id, user_id, role)');
+    const gamesSql = db.prepare("select sql from sqlite_master where name = 'games'").pluck().get() as string;
+    expect(gamesSql).toContain('between 1 and 10');
+    const names = db.prepare("select name from sqlite_master where type = 'table' and name like 'coop_%'").pluck().all();
+    expect(names).toEqual(expect.arrayContaining(COOP_TABLES));
+  });
+});
+
+describe('버전형 마이그레이션 v2 → v3 (docs/ROUNDS_8_10.md §4 · docs/COOP_SPEC.md §4)', () => {
+  it('v2 파일: 모든 행과 rounds·mode가 그대로 남고, round 상한이 10이 되며, 협동 테이블이 생긴다', () => {
+    const { path, before } = buildOld(V2_SCHEMA, false, 2);
+    // v2에서만 있는 값(고른 라운드·배정 방식·내보내기 기록)도 옮겨져야 한다
+    const pre = new Database(path);
+    pre.prepare("update games set rounds = '[1,3,5,7]', mode = 'auto' where id = 'g1'").run();
+    pre.prepare(`insert into game_exits (game_id, user_id, reason, at) values ('g2', 'u-a', 'left', ?)`).run(T);
+    expect(pre.prepare("select count(*) from sqlite_master where name like 'coop_%'").pluck().get()).toBe(0);
+    pre.close();
+
+    const db = open(path);
+    expect(schemaVersion(db)).toBe(3);
+    expect(dump(db, Object.keys(TABLES))).toEqual(before);
+    expect(db.prepare('select id, round, rounds, mode, phase, shown_up_to from games order by id').all()).toEqual([
+      { id: 'g1', round: 3, rounds: '[1,3,5,7]', mode: 'auto', phase: 'scored', shown_up_to: 2 },
+      { id: 'g2', round: 5, rounds: '[1,2,3,4,5]', mode: 'self', phase: 'finished', shown_up_to: 0 },
+    ]);
+    expect(db.prepare('select * from game_exits').all()).toEqual([{ game_id: 'g2', user_id: 'u-a', reason: 'left', at: T }]);
+    expectV3Constraints(db);
+  });
+
+  it('v2 파일을 다시 열어도 한 번만 올린다', () => {
+    const { path } = buildOld(V2_SCHEMA, false, 2);
+    const first = dump(open(path), Object.keys(TABLES));
+    const again = open(path);
+    expect(schemaVersion(again)).toBe(SCHEMA_VERSION);
+    expect(dump(again, Object.keys(TABLES))).toEqual(first);
+    expect(again.prepare("select name from sqlite_master where name like '%__v2'").all()).toEqual([]);
   });
 });

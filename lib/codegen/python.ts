@@ -3,7 +3,8 @@
 //
 // 매핑: 앞으로 owl.forward() · 점프 owl.jump() · 좌회전 owl.turn_left() · 우회전 owl.turn_right() · 잠자기 owl.sleep()
 //       F 호출 F() · 반복 N for _ in range(N): · 만약 앞이 벽이면 if owl.wall_ahead(): · 만약 앞이 구덩이면 if owl.pit_ahead():
-//       아니면 else: · 함수 F def F():
+//       아니면 else: · 함수 F def F()
+//       협동 전용 (COOP_SPEC §2): 색 바꾸기 owl.toggle_color() · 상자 놓기 owl.spawn_box()
 // 들여쓰기 4칸. 빈 몸통은 pass. 빈 else 는 생략(then 이 비면 pass).
 // 경로 규칙은 엔진과 같다(최상위 [i], 입 안 [i, slot, j], slot 0 = body/then, 1 = else) → Step.path 로 줄을 찾는다.
 // F 호출로 실행된 액션의 Step.path 는 def 본문의 원래 경로라서 def 본문 줄이 강조된다.
@@ -35,6 +36,10 @@ export function pyHeadTokens(b: Block): CodeToken[] {
       return owlCall('turn_right');
     case 'sleep':
       return owlCall('sleep');
+    case 'toggle':
+      return owlCall('toggle_color');
+    case 'spawn':
+      return owlCall('spawn_box');
     case 'call':
       return [tk('F', 'call'), tk('()', 'punct')];
     case 'repeat':

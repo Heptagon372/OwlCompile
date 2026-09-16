@@ -11,6 +11,8 @@ export interface BlockMeta {
   category: Category; color: string; ink: string;
   role: Role; ticks: 0 | 1; shape: Shape;
   deck: number;   // 실물 카드 팀당 매수 (참고용, 검증에 안 씀)
+  /** 협동 게임(게임 2) 전용 블록 (docs/COOP_SPEC.md §2). 게임 1 팔레트·validate·run에서는 거절된다 */
+  coop?: true;
 }
 
 export const CATEGORIES: Record<Category, { label: string; color: string; ink: string }> = {
@@ -23,10 +25,11 @@ export const CATEGORIES: Record<Category, { label: string; color: string; ink: s
 
 function meta(
   id: BlockId, label: string, keyword: string, category: Category,
-  role: Role, ticks: 0 | 1, shape: Shape, deck: number,
+  role: Role, ticks: 0 | 1, shape: Shape, deck: number, coop?: true,
 ): BlockMeta {
   const c = CATEGORIES[category];
-  return { id, label, keyword, category, color: c.color, ink: c.ink, role, ticks, shape, deck };
+  const m: BlockMeta = { id, label, keyword, category, color: c.color, ink: c.ink, role, ticks, shape, deck };
+  return coop ? { ...m, coop } : m;
 }
 
 export const BLOCKS: Record<BlockId, BlockMeta> = {
@@ -40,12 +43,24 @@ export const BLOCKS: Record<BlockId, BlockMeta> = {
   def: meta('def', '함수 F', 'define F', 'function', 'architect', 0, 'c1', 1),
   call: meta('call', 'F 호출', 'call F', 'function', 'architect', 0, 'plain', 4),
   sleep: meta('sleep', '잠자기', 'sleep', 'special', 'architect', 1, 'plain', 3),
+  // 협동 게임 전용 (COOP_SPEC §2 표). role은 참고용 — ROLES 목록에는 넣지 않는다 (게임 1 팔레트·역할 검사에서 자동으로 빠짐)
+  toggle: meta('toggle', '색 바꾸기', 'toggle', 'special', 'architect', 1, 'plain', 0, true),
+  spawn: meta('spawn', '상자 놓기', 'spawn', 'special', 'architect', 1, 'plain', 0, true),
 };
 
-/** 팔레트 표시 순서. */
+/** 팔레트 표시 순서. 협동 전용 블록은 맨 끝. */
 export const BLOCK_ORDER: BlockId[] = [
   'forward', 'jump', 'left', 'right', 'repeat', 'if_wall', 'if_pit', 'def', 'call', 'sleep',
+  'toggle', 'spawn',
 ];
+
+/** 협동 게임 팔레트 = 모든 블록(12개), BLOCK_ORDER 순서 (COOP_SPEC §2). */
+export const COOP_BLOCKS: readonly BlockId[] = [...BLOCK_ORDER];
+
+/** 협동 게임 전용 블록인가 (BLOCKS[id].coop). */
+export function isCoopBlockId(id: BlockId): boolean {
+  return BLOCKS[id].coop === true;
+}
 
 export const ROLES: Record<Role, { label: string; blocks: BlockId[]; color: string }> = {
   runner: { label: 'Runner', blocks: ['forward', 'jump'], color: CATEGORIES.move.color },

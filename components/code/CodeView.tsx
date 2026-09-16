@@ -50,6 +50,8 @@ export interface CodeViewProps {
   animate?: boolean;
   /** 강조할 블록 경로 (블록에 마우스를 올렸을 때). 그 블록의 줄들이 은은하게 */
   hoverPath?: readonly number[] | null;
+  /** 협동 재생에서 무너진 블록 경로들 (COOP_SPEC §8): 그 owner 의 줄에 data-crumble → 글자가 흩어지고 줄이 접힌다 */
+  crumbledPaths?: readonly (readonly number[])[] | null;
   /** 줄에 마우스를 올리면 그 줄이 속한 블록 경로, 벗어나면 null */
   onHoverPath?: (path: number[] | null) => void;
   /** 폰: 작은 글자·좁은 거터 */
@@ -122,7 +124,7 @@ function Indent({ n }: { n: number }) {
 
 export function CodeView({
   program, lang: langProp, defaultLang = 'python', onLangChange, showLangToggle = true, header = true, title = '코드', headerRight,
-  highlightPath = null, flashPaths, flashKey, animate = true, hoverPath = null, onHoverPath, compact = false, fontSize,
+  highlightPath = null, flashPaths, flashKey, animate = true, hoverPath = null, onHoverPath, crumbledPaths, compact = false, fontSize,
   collapsible = false, collapsed: collapsedProp, defaultCollapsed = false, onCollapsedChange, autoScroll = true, emptyText,
   className = '', bodyClassName = '', style, 'aria-label': ariaLabel,
 }: CodeViewProps) {
@@ -146,6 +148,10 @@ export function CodeView({
   const curIndex = highlightPath ? listing.lineOf.get(pathKey(highlightPath as number[])) : undefined;
   const curKey = curIndex === undefined ? null : (listing.lines[curIndex]?.key ?? null);
   const hoverKey = hoverPath ? pathKey(hoverPath as number[]) : null;
+  const crumbledKeys = useMemo<ReadonlySet<string> | null>(
+    () => (crumbledPaths?.length ? new Set(crumbledPaths.map((p) => pathKey(p as number[]))) : null),
+    [crumbledPaths],
+  );
 
   const bodyId = useId();
   const bodyRef = useRef<HTMLDivElement>(null);
@@ -259,6 +265,7 @@ export function CodeView({
               const f = fx.fxOf(l.key);
               const isCur = l.key === curKey;
               const isHover = hoverKey !== null && l.owner !== null && pathKey(l.owner) === hoverKey;
+              const isCrumbled = crumbledKeys !== null && l.owner !== null && crumbledKeys.has(pathKey(l.owner));
               const rowStyle = f === 'new'
                 ? ({ ['--cv-chars' as string]: Math.max(1, l.code.length), ['--cv-type' as string]: `${typeMs(l.code.length)}ms` } as CSSProperties)
                 : undefined;
@@ -267,6 +274,7 @@ export function CodeView({
                   key={l.key}
                   data-key={l.key}
                   data-path={l.path ? pathKey(l.path) : undefined}
+                  data-crumble={isCrumbled ? '' : undefined}
                   className={`cv-row ${f ? `cv-${f}` : ''} ${isCur ? 'cv-cur' : ''} ${isHover ? 'cv-hover' : ''}`}
                   style={rowStyle}
                   aria-current={isCur ? 'step' : undefined}

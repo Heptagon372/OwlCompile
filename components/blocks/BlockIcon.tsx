@@ -75,6 +75,21 @@ const PATHS: Record<BlockId, ReactNode> = {
       <path d="M13 4h6l-6 7h6" />
     </>
   ),
+  // 협동 전용 (COOP_SPEC §2): 색 바꾸기 = 반원 두 개가 맞물린 색상환 (오른쪽 반은 칠함) · 상자 놓기 = 정육면체 선
+  toggle: (
+    <>
+      <circle cx="12" cy="12" r="8" />
+      <path d="M12 4a8 8 0 0 1 0 16Z" fill="currentColor" stroke="none" />
+      <path d="M12 8a4 4 0 0 1 0 8" />
+    </>
+  ),
+  spawn: (
+    <>
+      <path d="M12 3l8 4.5v9L12 21l-8-4.5v-9Z" />
+      <path d="M4 7.5l8 4.5 8-4.5" />
+      <path d="M12 12v9" />
+    </>
+  ),
 };
 
 /** 카드 안 선 아이콘. v4 둥근 광택 카드에 맞춰 선을 2px 로 조금 굵게 (크기는 .blk svg 의 --blk-icon) */

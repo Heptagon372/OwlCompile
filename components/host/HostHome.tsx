@@ -1,7 +1,7 @@
 'use client';
 // /host (DESIGN_V4 §6 · FEATURE_V4 §1–§3):
 //   왼쪽 "대기실" = 실시간 대기 인원 링 + 들어온 순서 명단 (useLobby watch: 진행자는 구경만, 대기 명단에 들지 않는다)
-//   가운데 "새 게임" = 팀 수 2~10(추천 = ceil(대기/4) 표시) · 라운드 칩 1~7 + 프리셋 · 배정 방식 · 팀별 예상 인원 · 만들기
+//   가운데 "새 게임" = 팀 수 2~10(추천 = ceil(대기/4) 표시) · 라운드 칩 1~10(엔진에 없는 라운드는 '준비 중'으로 잠김) + 프리셋 · 배정 방식 · 팀별 예상 인원 · 만들기
 //   오른쪽 "내 게임" = 내가 만든 게임(관리자는 전부) 카드 목록
 // 강한 빛은 두 곳만: 만들기 버튼(primary) + 대기 인원 링. 고른 칸은 올라온 유리, 고른 라운드는 옅은 보라 면.
 // 만들면 "N명 배정, M명 대기"를 알리고 바로 콘솔(/host/<코드>)로 간다.
@@ -255,7 +255,8 @@ export function HostHome({ maps }: { maps: readonly RoundMeta[] }) {
             })}
             {preset == null ? <Chip tone="violet" size="sm" className="self-center">직접 조합</Chip> : null}
           </div>
-          <div className="mt-2.5 grid grid-cols-4 gap-1.5 @[27rem]:grid-cols-7" role="group" aria-label="라운드 1~7 (라운드 번호 = 난이도)">
+          {/* 라운드 칩 10개: 폰 4열(3줄) → 컨테이너 27rem 이상 5열(2줄). 맵이 없는 라운드는 '준비 중'으로 잠긴다 (ROUNDS_8_10 §4) */}
+          <div className="mt-2.5 grid grid-cols-4 gap-1.5 @[27rem]:grid-cols-5" role="group" aria-label="라운드 1~10 (라운드 번호 = 난이도)">
             {ALL_ROUNDS.map((r) => {
               const m = meta.get(r);
               const on = rounds.includes(r);

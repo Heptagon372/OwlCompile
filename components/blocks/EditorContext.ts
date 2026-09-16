@@ -28,6 +28,8 @@ export interface EditorContextValue {
   flash: FlashState | null;
   /** 블록 위 마우스 → 코드 줄 강조 (null = 벗어남) */
   onHover: (path: number[] | null) => void;
+  /** 협동 재생에서 무너진 블록 uid (COOP_SPEC §8): 그 카드에 data-crumble → CSS 무너짐. 문서에서는 지우지 않는다 */
+  crumbled: ReadonlySet<string>;
 }
 
 export const EditorContext = createContext<EditorContextValue | null>(null);

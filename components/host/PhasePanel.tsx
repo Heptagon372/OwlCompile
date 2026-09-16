@@ -22,6 +22,9 @@ import {
 
 export const JOIN_TROUBLE_HINT =
   '폰이 접속하지 못하면 PC와 같은 와이파이인지, Windows 방화벽에서 Node.js의 개인 네트워크 접속이 허용됐는지 확인하세요.';
+/** 인터넷에 공개된 서버(도메인·공인 IP)로 열었을 때: 폰의 네트워크는 상관없다 */
+export const JOIN_PUBLIC_HINT =
+  '인터넷 주소라서 와이파이·모바일 데이터 어디에 연결돼 있든 들어올 수 있습니다. 안 열리면 주소를 다시 확인하세요.';
 
 /** 페이즈 → 상태 칩 톤 (진행 중 보라 · 대기 호박색 · 완료 초록, DESIGN_V4 §3). 모든 화면 공통 값(contracts PHASE_STATUS) */
 export const PHASE_TONE: Record<Phase, ChipTone> = {
@@ -297,7 +300,7 @@ function JoinCard({ joinUrls, origin, code }: { joinUrls: GameView['joinUrls']; 
           </ul>
         </div>
       ) : null}
-      <p className="mt-3 text-xs leading-relaxed text-text-faint">{JOIN_TROUBLE_HINT}</p>
+      <p className="mt-3 text-xs leading-relaxed text-text-faint">{best?.kind === 'public' ? JOIN_PUBLIC_HINT : JOIN_TROUBLE_HINT}</p>
     </Panel>
   );
 }

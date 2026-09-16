@@ -8,19 +8,23 @@ import { randomUUID } from 'node:crypto';
 export type Db = Database.Database;
 export type SqlValue = string | number | bigint | null | Buffer;
 
-/** 스키마 버전 (PRAGMA user_version). 0 = 버전 관리 전(열 추가식 마이그레이션만), 2 = FEATURE_V4 §6 */
-export const SCHEMA_VERSION = 2;
+/**
+ * 스키마 버전 (PRAGMA user_version). 0 = 버전 관리 전(열 추가식 마이그레이션만), 2 = FEATURE_V4 §6,
+ * 3 = games.round 1~10 (docs/ROUNDS_8_10.md §4) + 협동 게임 테이블 (docs/COOP_SPEC.md §4)
+ */
+export const SCHEMA_VERSION = 3;
 
 /**
- * games (v2): round 1~7, rounds = 고른 라운드 JSON 배열, mode = 배정 방식.
+ * games (v3): round 1~10, rounds = 고른 라운드 JSON 배열, mode = 배정 방식.
  * 예전 게임은 mode 'self'(직접 선택)로 남는다: 늦게 온 사람의 자동 참가 대상이 아니다.
+ * (v2에서는 round 1~7이었다. v2·v3 단계가 같은 DDL을 쓰므로 v0 파일도 두 단계를 거쳐 같은 결과가 된다.)
  */
 function gamesDdl(name: string): string {
   return `create table if not exists ${name} (
   id text primary key,
   code text unique not null,
   host_id text not null references users,
-  round integer not null default 1 check (round between 1 and 7),
+  round integer not null default 1 check (round between 1 and 10),
   rounds text not null default '[1,2,3,4,5]',
   mode text not null default 'self' check (mode in ('auto','self')),
   phase text not null default 'lobby' check (phase in ('lobby','coding','sealed','running','scored','finished')),
@@ -48,6 +52,64 @@ function membersDdl(name: string): string {
 
 const MEMBERS_INDEXES = `create index if not exists members_game on members(game_id);
 create index if not exists members_user on members(user_id);`;
+
+/**
+ * 협동 게임 테이블 (v3, docs/COOP_SPEC.md §4 그대로). 게임 코드는 games 와 같은 4자리 공간을 나눠 쓴다.
+ * timer_ends_at·timer_remaining 은 games 와 같은 뜻, busy_until 은 재생 중 잠금.
+ */
+const COOP_DDL = `create table if not exists coop_games (
+  id text primary key, code text unique not null, host_id text not null references users,
+  phase text not null default 'lobby' check (phase in ('lobby','playing','finished')),
+  mode text not null default 'auto' check (mode in ('auto','self')),
+  minutes integer not null default 20,
+  timer_ends_at text, timer_remaining integer,
+  started_at text, finished_at text, created_at text not null
+);
+create table if not exists coop_teams (
+  id text primary key, game_id text not null references coop_games on delete cascade,
+  name text not null, color text not null, seat integer not null,
+  round integer not null default 1 check (round between 1 and 3),
+  done integer not null default 0,
+  score integer not null default 0,
+  runs integer not null default 0, crumbles integer not null default 0, restarts integer not null default 0,
+  cleared_rounds integer not null default 0,
+  finished_at text,
+  run_seq integer not null default 0,
+  busy_until text
+);
+create index if not exists coop_teams_game on coop_teams(game_id);
+create table if not exists coop_members (
+  id text primary key, game_id text not null references coop_games on delete cascade,
+  team_id text not null references coop_teams on delete cascade, user_id text not null references users on delete cascade,
+  owl integer not null check (owl between 0 and 3), joined_at text not null,
+  unique (game_id, user_id)
+);
+create index if not exists coop_members_user on coop_members(user_id);
+create table if not exists coop_programs (
+  team_id text not null references coop_teams on delete cascade, owl integer not null check (owl between 0 and 3),
+  doc text not null default '[]', version integer not null default 0, blocks integer not null default 0,
+  primary key (team_id, owl)
+);
+create table if not exists coop_worlds (
+  team_id text primary key references coop_teams on delete cascade,
+  round integer not null, state text not null, updated_at text not null
+);
+create table if not exists coop_runs (
+  team_id text not null references coop_teams on delete cascade, seq integer not null,
+  round integer not null, at text not null,
+  docs text not null, trace text not null, cleared integer not null, ticks integer not null,
+  mice integer not null, crumbles integer not null, points integer not null default 0, lines text not null default '[]',
+  primary key (team_id, seq)
+);
+create table if not exists coop_clears (
+  team_id text not null references coop_teams on delete cascade, round integer not null,
+  at text not null, points integer not null, runs integer not null, crumbles integer not null,
+  primary key (team_id, round)
+);
+create table if not exists coop_exits (
+  game_id text not null references coop_games on delete cascade, user_id text not null references users on delete cascade,
+  reason text not null check (reason in ('kicked','left')), at text not null, primary key (game_id, user_id)
+);`;
 
 const SCHEMA = schemaSql();
 
@@ -144,6 +206,7 @@ create table if not exists game_exits (
   at text not null,
   primary key (game_id, user_id)
 );
+${COOP_DDL}
 `;
 }
 
@@ -189,7 +252,16 @@ function migrateToV2(db: Db): void {
   db.exec(MEMBERS_INDEXES);
 }
 
-const VERSIONED: { version: number; up: (db: Db) => void }[] = [{ version: 2, up: migrateToV2 }];
+/** v3 (docs/ROUNDS_8_10.md §4 · docs/COOP_SPEC.md §4): games round 1~10 재생성 + 협동 게임 테이블 */
+function migrateToV3(db: Db): void {
+  rebuildTable(db, 'games', gamesDdl);
+  db.exec(COOP_DDL);
+}
+
+const VERSIONED: { version: number; up: (db: Db) => void }[] = [
+  { version: 2, up: migrateToV2 },
+  { version: 3, up: migrateToV3 },
+];
 
 /** 버전형 마이그레이션. 외래키는 트랜잭션 밖에서만 끌 수 있으므로 여기서 껐다 켠다. */
 function migrateVersions(db: Db): void {

@@ -19,6 +19,7 @@ export function headText(b: Block): string {
     case 'if_pit': return `${BLOCKS.if_pit.label} {`;
     case 'def': return `${BLOCKS.def.label} {`;
     default:
+      // 일반 블록(협동 전용 toggle·spawn 포함)은 라벨 그대로: "색 바꾸기" / "상자 놓기"
       return isKnownBlockId(b.id) ? BLOCKS[b.id].label : `? ${String((b as { id: unknown }).id)}`;
   }
 }

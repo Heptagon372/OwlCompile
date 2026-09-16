@@ -1,0 +1,17 @@
+# OWL COMPILE: https://owl.example.com → Next.js (127.0.0.1:3000)
+# owl.example.com 을 내 도메인으로 바꾼다 (docs/DEPLOY_AWS.md 8단계). 인증서는 Caddy가 자동으로 받고 갱신한다.
+owl.example.com {
+	# 페이지·스크립트는 압축하고, 실시간 스트림(text/event-stream)은 압축하지 않는다 (버퍼에 막히지 않게)
+	encode zstd gzip {
+		match {
+			header Content-Type text/html*
+			header Content-Type text/css*
+			header Content-Type text/plain*
+			header Content-Type text/x-component*
+			header Content-Type application/javascript*
+			header Content-Type application/json*
+			header Content-Type image/svg+xml*
+		}
+	}
+	reverse_proxy 127.0.0.1:3000
+}

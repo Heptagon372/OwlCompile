@@ -2,7 +2,8 @@
 // 진행자는 흔히 localhost로 콘솔을 열지만 폰은 이 PC의 와이파이(LAN) 주소로 들어와야 한다.
 //
 // 규칙
-// - OWL_PUBLIC_URL이 올바른 http(s) 주소면 그 origin 하나만 ('public'). 잘못된 값·이 PC 전용 주소(localhost 등)는
+// - OWL_PUBLIC_URL이 올바른 http(s) 주소면 그 origin 하나만. 종류는 주소로 정한다(도메인·공인 IP = 'public',
+//   192.168.x 같은 사설 IP = 'lan'). 잘못된 값·이 PC 전용 주소(localhost 등)는
 //   무시하고 자동 감지로 넘어간다 (서버 로그에 한 번 경고).
 // - 요청이 https이거나, 포트 없는 도메인(프록시·배포)으로 열렸으면 그 origin 하나만 (어댑터 주소는 그 뒤에서 안 열린다).
 // - 아니면: 요청의 origin(이 PC 전용 주소가 아닐 때) + os.networkInterfaces()의
@@ -144,7 +145,7 @@ export interface JoinUrlInput {
 /** 순수 함수: 입력만으로 후보 목록을 만든다 (단위 테스트용) */
 export function listJoinUrls(input: JoinUrlInput): JoinUrl[] {
   const pub = parsePublicUrl(input.publicUrl).origin;
-  if (pub) return [{ url: pub, kind: 'public' }];
+  if (pub) return [{ url: pub, kind: kindOfHostname(new URL(pub).hostname) }];
 
   const { hostname, port } = input.host ? splitHost(input.host) : { hostname: '', port: null };
   const portPart = port ? `:${port}` : '';
