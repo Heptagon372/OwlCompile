@@ -3,9 +3,13 @@
 # 지원: Lightsail·EC2의 Ubuntu/Debian, Amazon Linux 2023 (x86_64·arm64)
 # 먼저 고정 IP(EC2는 탄력적 IP)를 연결하고 방화벽(EC2는 보안 그룹)에 HTTP 80·HTTPS 443을 연 뒤, 서버 SSH 창에서:
 #   curl -fsSL https://raw.githubusercontent.com/Heptagon372/OwlCompile/main/deploy/lightsail-launch.sh | sudo bash
-# 내 도메인을 쓰려면 끝에 붙인다: ... | sudo bash -s -- owl.example.com
+# 내 도메인을 쓰려면 끝에 붙인다: ... | sudo bash -s -- owl.example.com  (DNS A 레코드가 이 서버를 가리켜야 한다)
 # 도메인을 안 주면 이 서버의 공인 IP로 sslip.io 주소를 만든다 (3.39.12.34 → 3-39-12-34.sslip.io).
-# 다시 실행해도 된다: 최신 코드로 다시 빌드하고, 관리자가 이미 있으면 새로 만들지 않는다.
+# HTTPS: nginx가 이미 켜져 있으면 nginx에 이 주소 설정 파일만 추가하고 certbot으로 인증서를 받는다
+#        (같은 서버의 다른 사이트 설정은 그대로). nginx가 없으면 Caddy를 쓴다.
+# 그 주소를 이미 다른 사이트가 쓰고 있으면 멈춘다. 기존 사이트를 백업하고 내린 뒤 바꾸려면 --replace-site:
+#   ... | sudo bash -s -- example.com --replace-site   (되돌리기: sudo bash /root/owl-replaced-sites/<시각>/restore.sh)
+# 다시 실행해도 된다: 최신 코드를 받고(앱 코드가 바뀌었을 때만 다시 빌드), 관리자가 이미 있으면 새로 만들지 않는다.
 # 설치 기록: /var/log/owl-setup.log · 관리자 비밀번호: sudo cat /root/owl-admin.txt
 
 REPO="${OWL_REPO:-https://github.com/Heptagon372/OwlCompile.git}"
@@ -144,6 +148,107 @@ UNIT
   systemctl daemon-reload
 }
 
+setup_caddy() {
+  local domain=$1
+  step "HTTPS (Caddy)"
+  sed "s/owl\.example\.com/$domain/g" "$APP_DIR/deploy/Caddyfile" > /etc/caddy/Caddyfile  # domain: "a.com www.a.com" 도 된다
+  caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile
+  systemctl enable caddy
+  if ! systemctl restart caddy; then
+    echo "--- Caddy 로그" >&2
+    journalctl -u caddy -n 30 --no-pager -o cat >&2 || true
+    echo "--- 80·443 포트를 쓰는 프로그램" >&2
+    ss -ltnp 2>/dev/null | grep -E ':(80|443) ' >&2 || echo "(없음)" >&2
+    die "Caddy가 켜지지 않았습니다. 위 로그를 보내 주세요."
+  fi
+}
+
+# nginx가 이미 켜져 있는 서버: 이 주소용 설정 파일 하나만 추가한다.
+# 같은 주소를 이미 서비스하는 기존 사이트가 있으면 replace=1일 때만 백업하고 내린다 (/root/owl-replaced-sites).
+setup_nginx() {
+  local names=$1 replace=$2 conf link="" f name re tok others backup="" restore_cmds="" r
+  local -a conflicts=() toks=() certbot_args=()
+  step "HTTPS (nginx에 이 주소 설정 추가)"
+  # Caddy가 부팅 때 먼저 켜지면 nginx의 80·443을 뺏으므로 자동 시작을 끈다
+  if systemctl is-enabled --quiet caddy 2>/dev/null || systemctl is-active --quiet caddy 2>/dev/null; then
+    systemctl disable --now caddy || true
+    echo "nginx와 포트가 겹치는 Caddy 자동 시작을 껐습니다."
+  fi
+  if ! command -v certbot >/dev/null 2>&1; then
+    [ "$PKG" = apt ] || die "certbot이 없습니다. certbot과 nginx 플러그인을 설치한 뒤 다시 실행하세요."
+    apt-get install -y certbot python3-certbot-nginx
+  fi
+  if [ -d /etc/nginx/sites-available ] && [ -d /etc/nginx/sites-enabled ]; then
+    conf=/etc/nginx/sites-available/owl-compile.conf
+    link=/etc/nginx/sites-enabled/owl-compile.conf
+  else
+    conf=/etc/nginx/conf.d/owl-compile.conf
+  fi
+  # 이 주소를 이미 서비스하는 다른 설정 파일 찾기 (주석 줄 제외)
+  for f in /etc/nginx/sites-enabled/* /etc/nginx/conf.d/*.conf; do
+    [ -e "$f" ] || continue
+    [ "$(basename "$f")" != owl-compile.conf ] || continue
+    for name in $names; do
+      re=${name//./\\.}
+      if grep -Eq "^[^#]*server_name[^;#]*[[:space:]]${re}([[:space:];]|\$)" "$f"; then
+        conflicts+=("$f")
+        break
+      fi
+    done
+  done
+
+  if [ ${#conflicts[@]} -gt 0 ]; then
+    if [ "$replace" != 1 ]; then
+      echo "이 주소를 이미 서비스하는 nginx 설정: ${conflicts[*]}" >&2
+      die "기존 사이트를 내리고 OWL COMPILE로 바꾸려면 명령 끝에 --replace-site 를 붙여 다시 실행하세요(기존 설정과 파일은 백업됩니다). 기존 사이트를 두려면 다른 주소(예: owl.하위도메인)를 쓰세요."
+    fi
+    # 다른 주소도 함께 들어 있는 설정 파일은 자동으로 내리지 않는다 (먼저 전부 검사하고 나서 바꾼다)
+    for f in "${conflicts[@]}"; do
+      read -ra toks <<< "$(grep -Eo '^[^#]*server_name[^;]*' "$f" | sed -E 's/^.*server_name//' | tr '\n' ' ')"
+      others=""
+      for tok in "${toks[@]}"; do
+        case " $names _ localhost " in *" $tok "*) ;; *) others="$others $tok" ;; esac
+      done
+      [ -z "$others" ] || die "$f 에 다른 주소($others)도 들어 있어서 자동으로 내리지 않습니다."
+    done
+    backup=/root/owl-replaced-sites/$(date +%Y%m%d-%H%M%S)
+    mkdir -p "$backup"
+    for f in "${conflicts[@]}"; do
+      cp -L "$f" "$backup/$(basename "$f").conf-backup"
+      while read -r r; do
+        if [ -d "$r" ]; then
+          tar -czf "$backup/files$(echo "$r" | tr / _).tar.gz" -C / "${r#/}"
+        fi
+      done < <(grep -Eo '^[[:space:]]*root[[:space:]]+[^;]+' "$f" | awk '{print $2}' | sort -u)
+      if [ -L "$f" ]; then
+        restore_cmds+="ln -sfn $(readlink -f "$f") $f"$'\n'
+        rm -f "$f"
+      else
+        restore_cmds+="mv $backup/$(basename "$f").disabled $f"$'\n'
+        mv "$f" "$backup/$(basename "$f").disabled"
+      fi
+    done
+    printf '# 기존 사이트로 되돌리기: sudo bash %s/restore.sh\nrm -f %s\n%snginx -t && systemctl reload nginx\n' \
+      "$backup" "${link:-$conf}" "$restore_cmds" > "$backup/restore.sh"
+    echo "기존 사이트를 nginx에서 내렸습니다(파일은 그대로 두고 백업도 했습니다): $backup"
+    echo "되돌리기: sudo bash $backup/restore.sh"
+  fi
+
+  sed "s/owl\.example\.com/$names/g" "$APP_DIR/deploy/nginx-owl-compile.conf" > "$conf"
+  [ -z "$link" ] || ln -sf "$conf" "$link"
+  if ! nginx -t; then
+    rm -f "$conf"
+    [ -z "$link" ] || rm -f "$link"
+    [ -z "$backup" ] || bash "$backup/restore.sh" || true
+    die "nginx 설정 검사에 실패해서 되돌렸습니다(기존 사이트 그대로). 위 메시지를 보내 주세요."
+  fi
+  systemctl reload nginx
+  # 인증서를 받아 이 파일에 443 설정과 http→https 이동을 붙인다. 이미 받은 인증서가 있으면 그대로 쓴다
+  for name in $names; do certbot_args+=(-d "$name"); done
+  certbot --nginx "${certbot_args[@]}" --non-interactive --agree-tos --register-unsafely-without-email \
+    --redirect --keep-until-expiring --expand
+}
+
 # 스크립트 전체를 읽은 뒤 실행한다 (curl | bash 도중 다른 명령이 표준 입력을 먹지 않게)
 main() {
   set -euo pipefail
@@ -175,16 +280,40 @@ main() {
   make_swap
   install_node
   node -v
-  install_caddy
 
-  local domain="${1:-}"
-  if [ -z "$domain" ]; then
-    local ip
-    ip=$(curl -fsS --max-time 10 https://checkip.amazonaws.com | tr -d '[:space:]')
-    [[ "$ip" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]] || die "이 서버의 공인 IP를 알아내지 못했습니다. 도메인을 직접 주세요: ... | sudo bash -s -- 도메인"
-    domain="${ip//./-}.sslip.io"
+  local proxy=caddy
+  if systemctl is-active --quiet nginx 2>/dev/null; then
+    proxy=nginx
+  else
+    install_caddy
   fi
-  step "주소: https://$domain"
+
+  # 인자: [도메인] [--replace-site]
+  local domain="" replace_site=0 a
+  for a in "$@"; do
+    case "$a" in
+      --replace-site) replace_site=1 ;;
+      -*) die "모르는 옵션입니다: $a" ;;
+      *) domain=$a ;;
+    esac
+  done
+
+  # 주소 정하기와 DNS 확인 (인증서 발급 전에 막히는 곳을 먼저 알려 준다)
+  local my_ip resolved names
+  my_ip=$(curl -fsS --max-time 10 https://checkip.amazonaws.com | tr -d '[:space:]')
+  [[ "$my_ip" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]] || die "이 서버의 공인 IP를 알아내지 못했습니다."
+  domain=${domain#http://}
+  domain=${domain#https://}
+  domain=${domain%%/*}
+  [ -n "$domain" ] || domain="${my_ip//./-}.sslip.io"
+  step "주소: https://$domain · 공인 IP: $my_ip · HTTPS: $proxy"
+  resolved=$(getent ahostsv4 "$domain" | awk 'NR == 1 {print $1}' || true)
+  [ "$resolved" = "$my_ip" ] || die "$domain 이(가) 이 서버($my_ip)를 가리키지 않습니다 (지금: ${resolved:-찾을 수 없음}). DNS에 A 레코드 $domain → $my_ip 를 추가하고 몇 분 뒤 다시 실행하세요."
+  # www.도메인도 이 서버를 가리키면 같이 받는다 (인증서·nginx server_name)
+  names=$domain
+  if [[ "$domain" != *.sslip.io ]] && [ "$(getent ahostsv4 "www.$domain" | awk 'NR == 1 {print $1}' || true)" = "$my_ip" ]; then
+    names="$domain www.$domain"
+  fi
 
   step "코드 받기"
   if [ -d "$APP_DIR/.git" ]; then
@@ -234,24 +363,23 @@ main() {
     echo "관리자가 이미 있어서 건너뜁니다."
   fi
 
-  step "HTTPS (Caddy)"
-  sed "s/owl\.example\.com/$domain/g" "$APP_DIR/deploy/Caddyfile" > /etc/caddy/Caddyfile
-  caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile
-  systemctl enable caddy
-  if ! systemctl restart caddy; then
-    echo "--- Caddy 로그" >&2
-    journalctl -u caddy -n 30 --no-pager -o cat >&2 || true
-    echo "--- 80·443 포트를 쓰는 프로그램" >&2
-    ss -ltnp 2>/dev/null | grep -E ':(80|443) ' >&2 || echo "(없음)" >&2
-    die "Caddy가 켜지지 않았습니다. 위 로그를 보내 주세요."
+  if [ "$proxy" = nginx ]; then
+    setup_nginx "$names" "$replace_site"
+  else
+    setup_caddy "$names"
   fi
 
-  step "인증서 발급 기다리는 중 (최대 3분)"
+  step "HTTPS 연결 확인 (최대 3분)"
   if ! wait_for "https://$domain/api/health" 180; then
     echo "https://$domain 에 아직 연결되지 않습니다." >&2
     echo "- EC2: 인스턴스 → 보안 → 보안 그룹 → 인바운드 규칙에 HTTP(80)·HTTPS(443), 소스 0.0.0.0/0이 있는지" >&2
     echo "- Lightsail: 네트워킹 탭 IPv4 방화벽에 HTTP(80)·HTTPS(443)가 있는지" >&2
-    echo "- 확인 후 같은 명령을 다시 실행하면 됩니다. Caddy 로그: journalctl -u caddy -n 50 --no-pager" >&2
+    if [ "$proxy" = nginx ]; then
+      echo "- nginx: sudo nginx -t · sudo certbot certificates" >&2
+    else
+      echo "- Caddy 로그: journalctl -u caddy -n 50 --no-pager" >&2
+    fi
+    echo "- 확인 후 같은 명령을 다시 실행하면 됩니다." >&2
     exit 1
   fi
 
