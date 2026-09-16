@@ -21,6 +21,22 @@ SQLite (/var/lib/owl-compile/owl.db)
 
 처음 한 번 30~40분 걸립니다. 아래 명령의 `owl.example.com`은 내 도메인으로 바꿔 읽습니다.
 
+## 빠른 설치 (자동 스크립트)
+
+[1단계](#1-인스턴스-만들기)와 [2단계](#2-고정-ip와-방화벽)(인스턴스 만들기, 고정 IP 연결, 방화벽에 HTTPS 443 추가)를 한 뒤, 인스턴스의 **SSH를 사용하여 연결** 창에 한 줄만 붙여 넣습니다. 3·5·6·7·8단계를 [`deploy/lightsail-launch.sh`](../deploy/lightsail-launch.sh)가 자동으로 합니다.
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/Heptagon372/OwlCompile/main/deploy/lightsail-launch.sh | sudo bash
+```
+
+- 주소는 고정 IP로 만든 sslip.io 주소가 됩니다(예: `https://3-39-12-34.sslip.io`). 내 도메인을 쓰려면 A 레코드를 먼저 연결하고([4단계 A](#4-도메인-정하기)) 명령 끝을 `| sudo bash -s -- owl.example.com`으로 바꿉니다.
+- 10분 안팎 걸립니다. 마지막에 `완료: https://…`가 나오면 끝입니다.
+- 관리자 `admin`의 비밀번호는 서버에서 무작위로 만들어집니다. `sudo cat /root/owl-admin.txt`로 보고, 로그인한 뒤 `/account`에서 바꿉니다.
+- 다시 실행해도 됩니다. 최신 코드로 다시 빌드하고, 관리자가 이미 있으면 그대로 둡니다.
+- 설치 기록은 `/var/log/owl-setup.log`에 남습니다.
+
+끝나면 [9단계](#9-확인)로 확인합니다. 아래 3~8단계는 이 스크립트가 하는 일을 손으로 하는 방법입니다.
+
 ---
 
 ## 0. 준비물
