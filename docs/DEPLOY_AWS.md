@@ -29,6 +29,7 @@ SQLite (/var/lib/owl-compile/owl.db)
 curl -fsSL https://raw.githubusercontent.com/Heptagon372/OwlCompile/main/deploy/lightsail-launch.sh | sudo bash
 ```
 
+- **EC2에서도 됩니다**(Ubuntu 또는 Amazon Linux 2023). 고정 IP 대신 **탄력적 IP**를 연결하고, 방화벽 대신 인스턴스의 **보안 그룹 인바운드 규칙**에 HTTP(80)·HTTPS(443)를 소스 `0.0.0.0/0`으로 추가합니다. 탄력적 IP가 없으면 서버를 껐다 켤 때 주소가 바뀝니다.
 - 주소는 고정 IP로 만든 sslip.io 주소가 됩니다(예: `https://3-39-12-34.sslip.io`). 내 도메인을 쓰려면 A 레코드를 먼저 연결하고([4단계 A](#4-도메인-정하기)) 명령 끝을 `| sudo bash -s -- owl.example.com`으로 바꿉니다.
 - 10분 안팎 걸립니다. 마지막에 `완료: https://…`가 나오면 끝입니다.
 - 관리자 `admin`의 비밀번호는 서버에서 무작위로 만들어집니다. `sudo cat /root/owl-admin.txt`로 보고, 로그인한 뒤 `/account`에서 바꿉니다.
